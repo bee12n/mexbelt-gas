@@ -4,16 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Gasolina</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     :root{
       --bg1:#0a0a0f;--bg2:#0f1420;--bg3:#141a2e;
       --orange:#ff6b1a;--orange2:#ff8c42;--orange-dim:rgba(255,107,26,.18);--orange-border:rgba(255,107,26,.35);
       --blue:#1e6fff;--blue2:#4a8fff;--blue-dim:rgba(30,111,255,.15);--blue-border:rgba(30,111,255,.35);
+      --green:#1fae6b;--green2:#3fd98c;--green-dim:rgba(31,174,107,.18);--green-border:rgba(31,174,107,.4);
       --card:rgba(255,255,255,.04);--border:rgba(255,255,255,.1);
       --text:#e8eaf0;--muted:#7a8aa0;
     }
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',sans-serif;background:var(--bg1);background-image:radial-gradient(ellipse at 20% 50%,rgba(30,111,255,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(255,107,26,.07) 0%,transparent 50%);min-height:100vh;padding:20px;color:var(--text)}
+    .hidden{display:none!important}
     .container{max-width:920px;margin:0 auto}
     header{text-align:center;padding:36px 0 24px;position:relative}
     header::after{content:'';display:block;width:80px;height:3px;background:linear-gradient(90deg,var(--orange),var(--blue));margin:14px auto 0;border-radius:2px}
@@ -34,7 +37,7 @@
     input,select{width:100%;padding:11px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:var(--text);font-size:.95rem;outline:none;transition:border-color .2s,background .2s}
     input:focus,select:focus{border-color:var(--orange);background:rgba(255,107,26,.06)}
     input::placeholder{color:rgba(255,255,255,.25)}
-    input[readonly]{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07);color:var(--muted);cursor:not-allowed}
+    input[readonly],select:disabled{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07);color:var(--muted);cursor:not-allowed;opacity:.8}
     select option{background:#0f1420;color:#fff}
     .fuel-selector{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
     .fuel-btn{padding:12px;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s;user-select:none}
@@ -56,6 +59,7 @@
     .btn-sm{padding:5px 12px;font-size:.78rem;width:auto;border-radius:8px;margin-top:0;box-shadow:none}
     .btn-danger{background:linear-gradient(90deg,#e53935,#b71c1c);box-shadow:none}
     .btn-clear{background:linear-gradient(90deg,#e53935,#b71c1c);box-shadow:none;margin-top:12px}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
     .result-box{display:none;background:linear-gradient(135deg,rgba(255,107,26,.1),rgba(30,111,255,.1));border:1px solid rgba(255,107,26,.3);border-radius:14px;padding:22px;margin-top:18px;text-align:center}
     .result-price{font-size:2.6rem;font-weight:800;background:linear-gradient(90deg,var(--orange2),var(--blue2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
     .result-details{display:flex;justify-content:center;gap:24px;margin-top:14px;flex-wrap:wrap}
@@ -101,172 +105,367 @@
     .price-row input{max-width:140px;flex:1}
     .price-row .phint{font-size:.73rem;color:var(--muted);flex:2}
     .divider{height:1px;background:var(--border);margin:16px 0}
+    /* Login */
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center}
+    .login-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;width:100%;max-width:380px}
+    .login-card h1{font-size:1.4rem;font-weight:800;text-align:center;margin-bottom:6px}
+    .login-card .sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:24px}
+    .login-card .field{margin-bottom:14px}
+    .login-error{background:rgba(229,57,53,.15);border:1px solid rgba(229,57,53,.4);color:#ff8a80;border-radius:10px;padding:10px 14px;font-size:.85rem;margin-bottom:14px}
+    /* Topbar */
+    .topbar{display:flex;align-items:center;justify-content:space-between;max-width:920px;margin:0 auto 6px;padding:6px 2px}
+    .topbar .who{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted)}
+    .role-chip{font-size:.68rem;font-weight:700;padding:2px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px}
+    .role-chip.admin{background:var(--green-dim);border:1px solid var(--green-border);color:var(--green2)}
+    .role-chip.vendedor{background:var(--blue-dim);border:1px solid var(--blue-border);color:var(--blue2)}
+    .logout-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:8px;font-size:.8rem;cursor:pointer;transition:all .2s}
+    .logout-btn:hover{border-color:rgba(255,255,255,.3);color:#fff}
+    .loading-msg{text-align:center;padding:60px 20px;color:var(--muted)}
   </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <h1><span class="ico">&#9981;</span> <span class="gas">Calcula</span><span class="line">dora</span> <span class="gas">de Gasolina</span></h1>
-    <p>Historial completo por vendedor, mes y tipo de combustible</p>
-  </header>
 
-  <!-- Config Precios -->
-  <div class="card">
-    <div class="card-title"><span class="dot"></span>Configuracion de Precios</div>
-    <div class="price-row">
-      <span class="plabel magna">&#128308; Magna</span>
-      <input type="number" id="priceMagna" value="25.00" step="0.01" min="0">
-      <span class="phint">Precio por litro en MXN &mdash; edita cuando cambie en la gasolinera</span>
+<!-- LOGIN -->
+<div id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <h1>&#9981; Gasolina MexBelt</h1>
+    <div class="sub">Inicia sesion para continuar</div>
+    <div id="loginError" class="login-error hidden"></div>
+    <div class="field">
+      <label>Usuario</label>
+      <select id="loginUser"><option value="">Cargando...</option></select>
     </div>
-    <div class="price-row">
-      <span class="plabel diesel">&#128309; Diesel</span>
-      <input type="number" id="priceDiesel" value="26.00" step="0.01" min="0">
-      <span class="phint">Precio por litro en MXN &mdash; edita cuando cambie en la gasolinera</span>
+    <div class="field">
+      <label>Contrasena</label>
+      <input type="password" id="loginPassword" placeholder="••••">
     </div>
-    <div class="divider"></div>
-    <div class="grid2">
-      <div>
-        <label>Rendimiento del Vehiculo (km/litro)</label>
-        <input type="number" id="kmPerLiter" value="15" step="0.1" min="0.1">
-      </div>
-    </div>
+    <button class="btn" id="loginBtn" onclick="doLogin()">Entrar</button>
   </div>
-
-  <!-- Registrar Viaje -->
-  <div class="card">
-    <div class="card-title"><span class="dot"></span>Registrar Viaje</div>
-    <div style="margin-bottom:16px">
-      <label>Tipo de Combustible</label>
-      <div class="fuel-selector">
-        <div class="fuel-btn active-magna" id="btnMagna" onclick="selectFuel('magna')">
-          <div class="fb-icon">&#128308;</div>
-          <div class="fb-name">Magna</div>
-          <div class="fb-price" id="magnaPriceLabel">$25.00 / L</div>
-        </div>
-        <div class="fuel-btn" id="btnDiesel" onclick="selectFuel('diesel')">
-          <div class="fb-icon">&#128309;</div>
-          <div class="fb-name">Diesel</div>
-          <div class="fb-price" id="dieselPriceLabel">$26.00 / L</div>
-        </div>
-      </div>
-    </div>
-    <div class="grid3">
-      <div>
-        <label>Vendedor / Usuario</label>
-        <input type="text" id="vendor" placeholder="Nombre del vendedor" maxlength="40">
-      </div>
-      <div>
-        <label>Distancia (km)</label>
-        <input type="number" id="distance" placeholder="Km recorridos" min="0" step="0.1">
-      </div>
-      <div>
-        <label>Nota (opcional)</label>
-        <input type="text" id="note" placeholder="Ej: Visita cliente" maxlength="60">
-      </div>
-    </div>
-    <button class="btn" onclick="calculate()">&#9650; Calcular y Agregar al Historial</button>
-    <div class="result-box" id="resultBox">
-      <div class="result-price" id="resultPrice"></div>
-      <div style="color:var(--muted);margin-top:4px;font-size:.85rem">Costo estimado del viaje</div>
-      <div class="result-details">
-        <div class="detail-item"><div class="val" id="resVendor"></div><div class="lbl">Vendedor</div></div>
-        <div class="detail-item"><div class="val" id="resFuel"></div><div class="lbl">Combustible</div></div>
-        <div class="detail-item"><div class="val" id="resLiters"></div><div class="lbl">Litros</div></div>
-        <div class="detail-item"><div class="val" id="resKm"></div><div class="lbl">Kilometros</div></div>
-        <div class="detail-item"><div class="val" id="resPrice"></div><div class="lbl">Precio/L</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tabs -->
-  <div class="tab-bar">
-    <button class="tab-btn active" onclick="showTab('tab-stats',this)">&#128202; Estadisticas</button>
-    <button class="tab-btn" onclick="showTab('tab-history',this)">&#128197; Historial por Mes</button>
-    <button class="tab-btn" onclick="showTab('tab-vendors',this)">&#128100; Por Vendedor</button>
-  </div>
-
-  <!-- Tab Estadisticas -->
-  <div id="tab-stats" class="tab-content active">
-    <div class="card">
-      <div class="card-title"><span class="dot"></span>Estadisticas Generales</div>
-      <div class="grid4">
-        <div class="stat-card"><div class="val" id="statTrips">0</div><div class="lbl">Viajes</div></div>
-        <div class="stat-card"><div class="val" id="statKm">0 km</div><div class="lbl">Distancia Total</div></div>
-        <div class="stat-card"><div class="val" id="statSpent">$0.00</div><div class="lbl">Gasto Total MXN</div></div>
-        <div class="stat-card"><div class="val" id="statVendors">0</div><div class="lbl">Vendedores</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tab Historial -->
-  <div id="tab-history" class="tab-content">
-    <div class="card">
-      <div class="card-title"><span class="dot"></span>Historial por Mes</div>
-      <div class="filters">
-        <div>
-          <label>Mes</label>
-          <select id="filterMonth" onchange="renderHistory()">
-            <option value="">Todos</option>
-          </select>
-        </div>
-        <div>
-          <label>Vendedor</label>
-          <select id="filterVendor" onchange="renderHistory()">
-            <option value="">Todos</option>
-          </select>
-        </div>
-        <div>
-          <label>Combustible</label>
-          <select id="filterFuel" onchange="renderHistory()">
-            <option value="">Todos</option>
-            <option value="magna">Magna</option>
-            <option value="diesel">Diesel</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:flex-end">
-          <button class="btn btn-clear" onclick="clearHistory()" style="margin-top:0;padding:11px 14px;font-size:.82rem">&#128465; Borrar Todo</button>
-        </div>
-      </div>
-      <div id="historyContainer"><div class="empty-state">No hay viajes registrados aun.</div></div>
-    </div>
-  </div>
-
-  <!-- Tab Vendedores -->
-  <div id="tab-vendors" class="tab-content">
-    <div class="card">
-      <div class="card-title"><span class="dot"></span>Resumen por Vendedor</div>
-      <div class="filters">
-        <div>
-          <label>Mes</label>
-          <select id="filterMonthVendor" onchange="renderVendors()">
-            <option value="">Todos</option>
-          </select>
-        </div>
-        <div>
-          <label>Combustible</label>
-          <select id="filterFuelVendor" onchange="renderVendors()">
-            <option value="">Todos</option>
-            <option value="magna">Magna</option>
-            <option value="diesel">Diesel</option>
-          </select>
-        </div>
-      </div>
-      <ul id="vendorList" style="list-style:none"><li class="empty-state">No hay datos aun.</li></ul>
-    </div>
-  </div>
-
 </div>
+
+<!-- APP -->
+<div id="appScreen" class="hidden">
+  <div class="topbar">
+    <div class="who">
+      <span id="topbarName"></span>
+      <span id="topbarRole" class="role-chip"></span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Cerrar sesion</button>
+  </div>
+  <div class="container">
+    <header>
+      <h1><span class="ico">&#9981;</span> <span class="gas">Calcula</span><span class="line">dora</span> <span class="gas">de Gasolina</span></h1>
+      <p>Historial completo por vendedor, mes y tipo de combustible</p>
+    </header>
+
+    <!-- Config Precios (solo admin) -->
+    <div class="card" id="priceConfigCard">
+      <div class="card-title"><span class="dot"></span>Configuracion de Precios</div>
+      <div class="price-row">
+        <span class="plabel magna">&#128308; Magna</span>
+        <input type="number" id="priceMagna" step="0.01" min="0">
+        <span class="phint">Precio por litro en MXN &mdash; edita cuando cambie en la gasolinera</span>
+      </div>
+      <div class="price-row">
+        <span class="plabel diesel">&#128309; Diesel</span>
+        <input type="number" id="priceDiesel" step="0.01" min="0">
+        <span class="phint">Precio por litro en MXN &mdash; edita cuando cambie en la gasolinera</span>
+      </div>
+      <div class="divider"></div>
+      <div class="grid2">
+        <div>
+          <label>Rendimiento del Vehiculo (km/litro)</label>
+          <input type="number" id="kmPerLiter" step="0.1" min="0.1">
+        </div>
+      </div>
+    </div>
+
+    <!-- Registrar Viaje -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Registrar Viaje</div>
+      <div style="margin-bottom:16px">
+        <label>Tipo de Combustible</label>
+        <div class="fuel-selector">
+          <div class="fuel-btn active-magna" id="btnMagna" onclick="selectFuel('magna')">
+            <div class="fb-icon">&#128308;</div>
+            <div class="fb-name">Magna</div>
+            <div class="fb-price" id="magnaPriceLabel">$0.00 / L</div>
+          </div>
+          <div class="fuel-btn" id="btnDiesel" onclick="selectFuel('diesel')">
+            <div class="fb-icon">&#128309;</div>
+            <div class="fb-name">Diesel</div>
+            <div class="fb-price" id="dieselPriceLabel">$0.00 / L</div>
+          </div>
+        </div>
+      </div>
+      <div class="grid3">
+        <div>
+          <label>Vendedor / Usuario</label>
+          <select id="vendorSelect"></select>
+        </div>
+        <div>
+          <label>Distancia (km)</label>
+          <input type="number" id="distance" placeholder="Km recorridos" min="0" step="0.1">
+        </div>
+        <div>
+          <label>Nota (opcional)</label>
+          <input type="text" id="note" placeholder="Ej: Visita cliente" maxlength="60">
+        </div>
+      </div>
+      <button class="btn" id="calcBtn" onclick="calculate()">&#9650; Calcular y Agregar al Historial</button>
+      <div class="result-box" id="resultBox">
+        <div class="result-price" id="resultPrice"></div>
+        <div style="color:var(--muted);margin-top:4px;font-size:.85rem">Costo estimado del viaje</div>
+        <div class="result-details">
+          <div class="detail-item"><div class="val" id="resVendor"></div><div class="lbl">Vendedor</div></div>
+          <div class="detail-item"><div class="val" id="resFuel"></div><div class="lbl">Combustible</div></div>
+          <div class="detail-item"><div class="val" id="resLiters"></div><div class="lbl">Litros</div></div>
+          <div class="detail-item"><div class="val" id="resKm"></div><div class="lbl">Kilometros</div></div>
+          <div class="detail-item"><div class="val" id="resPrice"></div><div class="lbl">Precio/L</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showTab('tab-stats',this)">&#128202; Estadisticas</button>
+      <button class="tab-btn" onclick="showTab('tab-history',this)">&#128197; Historial por Mes</button>
+      <button class="tab-btn" onclick="showTab('tab-week',this)">&#128198; Historial por Semana</button>
+      <button class="tab-btn" id="tabVendorsBtn" onclick="showTab('tab-vendors',this)">&#128100; Por Vendedor</button>
+    </div>
+
+    <!-- Tab Estadisticas -->
+    <div id="tab-stats" class="tab-content active">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Estadisticas Generales</div>
+        <div class="grid4">
+          <div class="stat-card"><div class="val" id="statTrips">0</div><div class="lbl">Viajes</div></div>
+          <div class="stat-card"><div class="val" id="statKm">0 km</div><div class="lbl">Distancia Total</div></div>
+          <div class="stat-card"><div class="val" id="statSpent">$0.00</div><div class="lbl">Gasto Total MXN</div></div>
+          <div class="stat-card" id="statVendorsCard"><div class="val" id="statVendors">0</div><div class="lbl">Vendedores</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Historial por Mes -->
+    <div id="tab-history" class="tab-content">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Historial por Mes</div>
+        <div class="filters">
+          <div>
+            <label>Mes</label>
+            <select id="filterMonth" onchange="renderHistory()"><option value="">Todos</option></select>
+          </div>
+          <div id="filterVendorWrap">
+            <label>Vendedor</label>
+            <select id="filterVendor" onchange="renderHistory()"><option value="">Todos</option></select>
+          </div>
+          <div>
+            <label>Combustible</label>
+            <select id="filterFuel" onchange="renderHistory()">
+              <option value="">Todos</option>
+              <option value="magna">Magna</option>
+              <option value="diesel">Diesel</option>
+            </select>
+          </div>
+          <div id="clearAllWrap" style="display:flex;align-items:flex-end">
+            <button class="btn btn-clear" onclick="clearHistory()" style="margin-top:0;padding:11px 14px;font-size:.82rem">&#128465; Borrar Todo</button>
+          </div>
+        </div>
+        <div id="historyContainer"><div class="empty-state">No hay viajes registrados aun.</div></div>
+      </div>
+    </div>
+
+    <!-- Tab Historial por Semana -->
+    <div id="tab-week" class="tab-content">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Historial por Semana</div>
+        <div class="filters">
+          <div id="filterVendorWeekWrap">
+            <label>Vendedor</label>
+            <select id="filterVendorWeek" onchange="renderWeekHistory()"><option value="">Todos</option></select>
+          </div>
+          <div>
+            <label>Combustible</label>
+            <select id="filterFuelWeek" onchange="renderWeekHistory()">
+              <option value="">Todos</option>
+              <option value="magna">Magna</option>
+              <option value="diesel">Diesel</option>
+            </select>
+          </div>
+        </div>
+        <div id="weekContainer"><div class="empty-state">No hay viajes registrados aun.</div></div>
+      </div>
+    </div>
+
+    <!-- Tab Vendedores (solo admin) -->
+    <div id="tab-vendors" class="tab-content">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Resumen por Vendedor</div>
+        <div class="filters">
+          <div>
+            <label>Mes</label>
+            <select id="filterMonthVendor" onchange="renderVendors()"><option value="">Todos</option></select>
+          </div>
+          <div>
+            <label>Combustible</label>
+            <select id="filterFuelVendor" onchange="renderVendors()">
+              <option value="">Todos</option>
+              <option value="magna">Magna</option>
+              <option value="diesel">Diesel</option>
+            </select>
+          </div>
+        </div>
+        <ul id="vendorList" style="list-style:none"><li class="empty-state">No hay datos aun.</li></ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script>
-var K='gasHistory';
+// ==================== SUPABASE SETUP ====================
+var SUPABASE_URL='https://jxjqzztipihgdjivvubq.supabase.co';
+var SUPABASE_KEY='sb_publishable_Sjf6UkMXUZooCgvSizvkwg_i0tKaI7S';
+var sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+var SESSION_KEY='gas_session';
+var session=null;       // {username,nombre,rol}
+var allUsers=[];        // [{username,nombre,rol}]
+var trips=[];           // viajes visibles segun el rol
+var cfg={precio_magna:25,precio_diesel:26,rendimiento:15};
 var selectedFuel='magna';
 
-function gh(){try{return JSON.parse(localStorage.getItem(K))||[];}catch(e){return[];}}
-function sh(h){localStorage.setItem(K,JSON.stringify(h));}
+// ==================== HELPERS ====================
 function fm(v){return'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 function fd(iso){var d=new Date(iso);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 function fMonthKey(iso){var d=new Date(iso);return d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'));}
 function fMonthLabel(k){var d=new Date(k+'-01');var l=d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});return l.charAt(0).toUpperCase()+l.slice(1);}
+function startOfWeek(d){var dt=new Date(d);var day=dt.getDay();var diff=(day===0?-6:1)-day;dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
+function fWeekKey(iso){var s=startOfWeek(new Date(iso));return s.getFullYear()+'-'+String(s.getMonth()+1).padStart(2,'0')+'-'+String(s.getDate()).padStart(2,'0');}
+function fWeekLabel(k){var s=new Date(k+'T00:00:00');var e=new Date(s);e.setDate(e.getDate()+6);var opts={day:'numeric',month:'short'};var l1=s.toLocaleDateString('es-MX',opts);var l2=e.toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});return'Semana del '+l1+' al '+l2;}
+function isAdmin(){return session&&session.rol==='admin';}
+function nombreDe(username){var u=allUsers.find(function(x){return x.username===username;});return u?u.nombre:username;}
 
+// ==================== AUTH ====================
+async function loadUserList(){
+  var sel=document.getElementById('loginUser');
+  try{
+    var res=await sb.from('usuarios').select('username,nombre,rol').order('nombre');
+    if(res.error)throw res.error;
+    allUsers=res.data||[];
+    sel.innerHTML=allUsers.map(function(u){return'<option value="'+u.username+'">'+u.nombre+'</option>';}).join('');
+  }catch(e){
+    sel.innerHTML='<option value="">Error cargando usuarios</option>';
+    showLoginError('No se pudo conectar con la base de datos. Revisa tu conexion e intenta de nuevo.');
+  }
+}
+
+function showLoginError(msg){
+  var el=document.getElementById('loginError');
+  el.textContent=msg;el.classList.remove('hidden');
+}
+
+async function doLogin(){
+  var username=document.getElementById('loginUser').value;
+  var password=document.getElementById('loginPassword').value;
+  var btn=document.getElementById('loginBtn');
+  document.getElementById('loginError').classList.add('hidden');
+  if(!username){showLoginError('Selecciona un usuario.');return;}
+  if(!password){showLoginError('Ingresa tu contrasena.');return;}
+  btn.disabled=true;btn.textContent='Entrando...';
+  try{
+    var res=await sb.from('usuarios').select('username,nombre,rol').eq('username',username).eq('password',password).single();
+    if(res.error||!res.data){showLoginError('Contrasena incorrecta.');btn.disabled=false;btn.textContent='Entrar';return;}
+    session=res.data;
+    localStorage.setItem(SESSION_KEY,JSON.stringify(session));
+    await startApp();
+  }catch(e){
+    showLoginError('Error al iniciar sesion. Intenta de nuevo.');
+    btn.disabled=false;btn.textContent='Entrar';
+  }
+}
+
+function doLogout(){
+  localStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+// ==================== APP STARTUP ====================
+async function startApp(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('hidden');
+  document.getElementById('topbarName').textContent=session.nombre;
+  var roleEl=document.getElementById('topbarRole');
+  roleEl.textContent=isAdmin()?'Admin':'Vendedor';
+  roleEl.className='role-chip '+(isAdmin()?'admin':'vendedor');
+
+  document.getElementById('priceConfigCard').classList.toggle('hidden',!isAdmin());
+  document.getElementById('tabVendorsBtn').classList.toggle('hidden',!isAdmin());
+  document.getElementById('clearAllWrap').classList.toggle('hidden',!isAdmin());
+  document.getElementById('filterVendorWrap').classList.toggle('hidden',!isAdmin());
+  document.getElementById('filterVendorWeekWrap').classList.toggle('hidden',!isAdmin());
+  document.getElementById('statVendorsCard').classList.toggle('hidden',!isAdmin());
+
+  await loadConfig();
+  setupVendorSelect();
+  setupPriceInputs();
+  await loadTrips();
+  updateFilters();
+  renderStats();
+}
+
+function setupVendorSelect(){
+  var sel=document.getElementById('vendorSelect');
+  if(isAdmin()){
+    sel.disabled=false;
+    sel.innerHTML=allUsers.map(function(u){return'<option value="'+u.username+'">'+u.nombre+'</option>';}).join('');
+  }else{
+    sel.disabled=true;
+    sel.innerHTML='<option value="'+session.username+'">'+session.nombre+'</option>';
+  }
+}
+
+function setupPriceInputs(){
+  document.getElementById('priceMagna').value=cfg.precio_magna;
+  document.getElementById('priceDiesel').value=cfg.precio_diesel;
+  document.getElementById('kmPerLiter').value=cfg.rendimiento;
+  updateFuelLabels();
+  document.getElementById('priceMagna').addEventListener('input',function(){cfg.precio_magna=parseFloat(this.value)||0;updateFuelLabels();saveConfig('precio_magna',cfg.precio_magna);});
+  document.getElementById('priceDiesel').addEventListener('input',function(){cfg.precio_diesel=parseFloat(this.value)||0;updateFuelLabels();saveConfig('precio_diesel',cfg.precio_diesel);});
+  document.getElementById('kmPerLiter').addEventListener('input',function(){cfg.rendimiento=parseFloat(this.value)||0;saveConfig('rendimiento',cfg.rendimiento);});
+}
+
+async function saveConfig(clave,valor){
+  if(!isAdmin())return;
+  try{await sb.from('config').update({valor:valor}).eq('clave',clave);}catch(e){}
+}
+
+// ==================== DATA LOADING ====================
+async function loadConfig(){
+  try{
+    var res=await sb.from('config').select('clave,valor');
+    if(res.error)throw res.error;
+    (res.data||[]).forEach(function(r){cfg[r.clave]=r.valor;});
+  }catch(e){
+    alert('No se pudo cargar la configuracion de precios. Se usaran valores por defecto.');
+  }
+}
+
+async function loadTrips(){
+  try{
+    var q=sb.from('viajes').select('*').order('fecha',{ascending:false});
+    if(!isAdmin())q=q.eq('username',session.username);
+    var res=await q;
+    if(res.error)throw res.error;
+    trips=res.data||[];
+  }catch(e){
+    trips=[];
+    alert('No se pudo cargar el historial. Revisa tu conexion.');
+  }
+}
+
+// ==================== FUEL SELECTOR ====================
 function selectFuel(f){
   selectedFuel=f;
   document.getElementById('btnMagna').className='fuel-btn'+(f==='magna'?' active-magna':'');
@@ -275,144 +474,206 @@ function selectFuel(f){
 }
 
 function updateFuelLabels(){
-  var pm=parseFloat(document.getElementById('priceMagna').value)||25;
-  var pd=parseFloat(document.getElementById('priceDiesel').value)||26;
-  document.getElementById('magnaPriceLabel').textContent=fm(pm)+' / L';
-  document.getElementById('dieselPriceLabel').textContent=fm(pd)+' / L';
+  document.getElementById('magnaPriceLabel').textContent=fm(cfg.precio_magna)+' / L';
+  document.getElementById('dieselPriceLabel').textContent=fm(cfg.precio_diesel)+' / L';
 }
 
-document.getElementById('priceMagna').addEventListener('input',updateFuelLabels);
-document.getElementById('priceDiesel').addEventListener('input',updateFuelLabels);
-
+// ==================== TABS ====================
 function showTab(id,btn){
   document.querySelectorAll('.tab-content').forEach(function(el){el.classList.remove('active');});
   document.querySelectorAll('.tab-btn').forEach(function(el){el.classList.remove('active');});
   document.getElementById(id).classList.add('active');
   btn.classList.add('active');
   if(id==='tab-history')renderHistory();
+  if(id==='tab-week')renderWeekHistory();
   if(id==='tab-vendors')renderVendors();
 }
 
-function calculate(){
-  var price=parseFloat(selectedFuel==='magna'?document.getElementById('priceMagna').value:document.getElementById('priceDiesel').value);
-  var kmpl=parseFloat(document.getElementById('kmPerLiter').value);
-  var vendor=document.getElementById('vendor').value.trim();
+// ==================== REGISTRAR VIAJE ====================
+async function calculate(){
+  var price=selectedFuel==='magna'?cfg.precio_magna:cfg.precio_diesel;
+  var kmpl=cfg.rendimiento;
+  var vendorUsername=document.getElementById('vendorSelect').value;
   var dist=parseFloat(document.getElementById('distance').value);
   var note=document.getElementById('note').value.trim();
-  if(!vendor){alert('Por favor ingresa el nombre del vendedor.');return;}
+  if(!vendorUsername){alert('Selecciona un vendedor.');return;}
   if(!dist||dist<=0){alert('Por favor ingresa una distancia valida.');return;}
-  if(!price||price<=0){alert('Por favor ingresa un precio valido en la configuracion.');return;}
-  if(!kmpl||kmpl<=0){alert('Por favor ingresa un rendimiento valido.');return;}
+  if(!price||price<=0){alert('El precio del combustible no es valido. Pide al admin que lo revise.');return;}
+  if(!kmpl||kmpl<=0){alert('El rendimiento del vehiculo no es valido. Pide al admin que lo revise.');return;}
   var liters=dist/kmpl;
   var cost=liters*price;
-  document.getElementById('resultBox').style.display='block';
-  document.getElementById('resultPrice').textContent=fm(cost)+' MXN';
-  document.getElementById('resVendor').textContent=vendor;
-  document.getElementById('resFuel').textContent=selectedFuel==='magna'?'Magna':'Diesel';
-  document.getElementById('resLiters').textContent=liters.toFixed(2)+' L';
-  document.getElementById('resKm').textContent=dist.toFixed(1)+' km';
-  document.getElementById('resPrice').textContent=fm(price);
-  var history=gh();
-  history.unshift({id:Date.now(),date:new Date().toISOString(),vendor:vendor,fuel:selectedFuel,distance:dist,gasPrice:price,kmPerLiter:kmpl,liters:liters,cost:cost,note:note||null});
-  sh(history);updateFilters();renderStats();
-  document.getElementById('distance').value='';
-  document.getElementById('note').value='';
+
+  var btn=document.getElementById('calcBtn');
+  btn.disabled=true;btn.textContent='Guardando...';
+  try{
+    var res=await sb.from('viajes').insert({
+      username:vendorUsername,tipo_combustible:selectedFuel,distancia_km:dist,
+      precio_litro:price,rendimiento:kmpl,litros:liters,costo:cost,nota:note||null
+    }).select().single();
+    if(res.error)throw res.error;
+
+    document.getElementById('resultBox').style.display='block';
+    document.getElementById('resultPrice').textContent=fm(cost)+' MXN';
+    document.getElementById('resVendor').textContent=nombreDe(vendorUsername);
+    document.getElementById('resFuel').textContent=selectedFuel==='magna'?'Magna':'Diesel';
+    document.getElementById('resLiters').textContent=liters.toFixed(2)+' L';
+    document.getElementById('resKm').textContent=dist.toFixed(1)+' km';
+    document.getElementById('resPrice').textContent=fm(price);
+
+    document.getElementById('distance').value='';
+    document.getElementById('note').value='';
+
+    await loadTrips();
+    updateFilters();renderStats();renderHistory();renderWeekHistory();renderVendors();
+  }catch(e){
+    alert('No se pudo guardar el viaje. Revisa tu conexion e intenta de nuevo.');
+  }
+  btn.disabled=false;btn.textContent='\u25B2 Calcular y Agregar al Historial';
 }
 
-function deleteEntry(id){
+async function deleteEntry(id,owner){
+  if(!isAdmin()&&owner!==session.username)return;
   if(!confirm('Eliminar este registro?'))return;
-  var h=gh().filter(function(e){return e.id!==id;});
-  sh(h);updateFilters();renderHistory();renderStats();renderVendors();
-}
-
-function clearHistory(){
-  if(confirm('Borrar TODO el historial? Esta accion no se puede deshacer.')){
-    sh([]);updateFilters();renderHistory();renderStats();renderVendors();
-    document.getElementById('resultBox').style.display='none';
+  try{
+    var res=await sb.from('viajes').delete().eq('id',id);
+    if(res.error)throw res.error;
+    await loadTrips();
+    updateFilters();renderHistory();renderWeekHistory();renderStats();renderVendors();
+  }catch(e){
+    alert('No se pudo eliminar el registro.');
   }
 }
 
+async function clearHistory(){
+  if(!isAdmin())return;
+  if(!confirm('Borrar TODO el historial de TODOS los vendedores? Esta accion no se puede deshacer.'))return;
+  try{
+    var res=await sb.from('viajes').delete().not('id','is',null);
+    if(res.error)throw res.error;
+    await loadTrips();
+    updateFilters();renderHistory();renderWeekHistory();renderStats();renderVendors();
+    document.getElementById('resultBox').style.display='none';
+  }catch(e){
+    alert('No se pudo borrar el historial.');
+  }
+}
+
+// ==================== FILTERS ====================
 function updateFilters(){
-  var h=gh();
-  var months=[],vendors=[];
-  h.forEach(function(e){
-    var k=fMonthKey(e.date);
+  var months=[],vendorsSet=[];
+  trips.forEach(function(e){
+    var k=fMonthKey(e.fecha);
     if(months.indexOf(k)<0)months.push(k);
-    if(vendors.indexOf(e.vendor)<0)vendors.push(e.vendor);
+    if(vendorsSet.indexOf(e.username)<0)vendorsSet.push(e.username);
   });
-  months.sort().reverse();vendors.sort();
-  var ids=['filterMonth','filterMonthVendor'];
-  ids.forEach(function(id){
+  months.sort().reverse();
+
+  ['filterMonth','filterMonthVendor'].forEach(function(id){
     var sel=document.getElementById(id),cur=sel.value;
     sel.innerHTML='<option value="">Todos</option>';
     months.forEach(function(k){sel.innerHTML+='<option value="'+k+'"'+(k===cur?' selected':'')+'>'+fMonthLabel(k)+'</option>';});
   });
-  var vs=document.getElementById('filterVendor'),cv=vs.value;
-  vs.innerHTML='<option value="">Todos</option>';
-  vendors.forEach(function(v){vs.innerHTML+='<option value="'+v+'"'+(v===cv?' selected':'')+'>'+v+'</option>';});
+
+  ['filterVendor','filterVendorWeek'].forEach(function(id){
+    var sel=document.getElementById(id),cur=sel.value;
+    sel.innerHTML='<option value="">Todos</option>';
+    vendorsSet.sort().forEach(function(v){sel.innerHTML+='<option value="'+v+'"'+(v===cur?' selected':'')+'>'+nombreDe(v)+'</option>';});
+  });
 }
 
+// ==================== RENDER: STATS ====================
 function renderStats(){
-  var h=gh();
-  document.getElementById('statTrips').textContent=h.length;
-  var tk=h.reduce(function(a,e){return a+e.distance;},0);
-  var ts=h.reduce(function(a,e){return a+e.cost;},0);
-  var vs=[];h.forEach(function(e){if(vs.indexOf(e.vendor)<0)vs.push(e.vendor);});
+  document.getElementById('statTrips').textContent=trips.length;
+  var tk=trips.reduce(function(a,e){return a+e.distancia_km;},0);
+  var ts=trips.reduce(function(a,e){return a+e.costo;},0);
+  var vs=[];trips.forEach(function(e){if(vs.indexOf(e.username)<0)vs.push(e.username);});
   document.getElementById('statKm').textContent=tk.toFixed(1)+' km';
   document.getElementById('statSpent').textContent=fm(ts);
   document.getElementById('statVendors').textContent=vs.length;
 }
 
+// ==================== RENDER: HISTORIAL POR MES ====================
 function renderHistory(){
-  var h=gh();
+  var h=trips.slice();
   var mf=document.getElementById('filterMonth').value;
-  var vf=document.getElementById('filterVendor').value;
+  var vf=isAdmin()?document.getElementById('filterVendor').value:session.username;
   var ff=document.getElementById('filterFuel').value;
-  if(mf)h=h.filter(function(e){return fMonthKey(e.date)===mf;});
-  if(vf)h=h.filter(function(e){return e.vendor===vf;});
-  if(ff)h=h.filter(function(e){return e.fuel===ff;});
+  if(mf)h=h.filter(function(e){return fMonthKey(e.fecha)===mf;});
+  if(vf)h=h.filter(function(e){return e.username===vf;});
+  if(ff)h=h.filter(function(e){return e.tipo_combustible===ff;});
   var c=document.getElementById('historyContainer');
   if(h.length===0){c.innerHTML='<div class="empty-state">No hay viajes para este filtro.</div>';return;}
   var groups={},order=[];
-  h.forEach(function(e){var k=fMonthKey(e.date);if(!groups[k]){groups[k]=[];order.push(k);}groups[k].push(e);});
+  h.forEach(function(e){var k=fMonthKey(e.fecha);if(!groups[k]){groups[k]=[];order.push(k);}groups[k].push(e);});
   var html='';
   order.forEach(function(k){
     var entries=groups[k];
-    var totalKm=entries.reduce(function(a,e){return a+e.distance;},0);
-    var totalCost=entries.reduce(function(a,e){return a+e.cost;},0);
-    html+='<div class="month-header" onclick="toggleMonth(this)"><div><span class="mh-title">'+fMonthLabel(k)+'</span></div><div class="mh-stats"><span>'+entries.length+' viaje(s)</span><span>'+totalKm.toFixed(1)+' km</span><span style="color:var(--orange2);font-weight:700">'+fm(totalCost)+'</span></div><span class="mh-arrow">&#9660;</span></div>';
+    var totalKm=entries.reduce(function(a,e){return a+e.distancia_km;},0);
+    var totalCost=entries.reduce(function(a,e){return a+e.costo;},0);
+    html+='<div class="month-header" onclick="toggleGroup(this)"><div><span class="mh-title">'+fMonthLabel(k)+'</span></div><div class="mh-stats"><span>'+entries.length+' viaje(s)</span><span>'+totalKm.toFixed(1)+' km</span><span style="color:var(--orange2);font-weight:700">'+fm(totalCost)+'</span></div><span class="mh-arrow">&#9660;</span></div>';
     html+='<div class="month-entries">';
-    entries.forEach(function(e){
-      var ftag=e.fuel==='diesel'?'<span class="fuel-tag-diesel">Diesel</span>':'<span class="fuel-tag-magna">Magna</span>';
-      html+='<div class="history-item"><div class="info flex:1"><div class="top"><span class="vendor-badge">'+e.vendor+'</span>'+ftag+(e.note?e.note+' &mdash; ':'')+e.distance.toFixed(1)+' km</div><div class="bottom">'+fd(e.date)+' &bull; '+e.liters.toFixed(2)+'L &bull; '+fm(e.gasPrice)+'/L &bull; '+e.kmPerLiter+' km/L</div></div><div class="cost">'+fm(e.cost)+'</div><button class="btn btn-sm btn-danger" onclick="deleteEntry('+e.id+')">&#10005;</button></div>';
-    });
+    entries.forEach(function(e){html+=renderEntryHtml(e);});
     html+='</div>';
   });
   c.innerHTML=html;
 }
 
-function toggleMonth(el){
+// ==================== RENDER: HISTORIAL POR SEMANA ====================
+function renderWeekHistory(){
+  var h=trips.slice();
+  var vf=isAdmin()?document.getElementById('filterVendorWeek').value:session.username;
+  var ff=document.getElementById('filterFuelWeek').value;
+  if(vf)h=h.filter(function(e){return e.username===vf;});
+  if(ff)h=h.filter(function(e){return e.tipo_combustible===ff;});
+  var c=document.getElementById('weekContainer');
+  if(h.length===0){c.innerHTML='<div class="empty-state">No hay viajes para este filtro.</div>';return;}
+  var groups={},order=[];
+  h.forEach(function(e){var k=fWeekKey(e.fecha);if(!groups[k]){groups[k]=[];order.push(k);}groups[k].push(e);});
+  order.sort().reverse();
+  var html='';
+  order.forEach(function(k){
+    var entries=groups[k];
+    var totalKm=entries.reduce(function(a,e){return a+e.distancia_km;},0);
+    var totalCost=entries.reduce(function(a,e){return a+e.costo;},0);
+    html+='<div class="month-header" onclick="toggleGroup(this)"><div><span class="mh-title">'+fWeekLabel(k)+'</span></div><div class="mh-stats"><span>'+entries.length+' viaje(s)</span><span>'+totalKm.toFixed(1)+' km</span><span style="color:var(--orange2);font-weight:700">'+fm(totalCost)+'</span></div><span class="mh-arrow">&#9660;</span></div>';
+    html+='<div class="month-entries">';
+    entries.forEach(function(e){html+=renderEntryHtml(e);});
+    html+='</div>';
+  });
+  c.innerHTML=html;
+}
+
+function renderEntryHtml(e){
+  var ftag=e.tipo_combustible==='diesel'?'<span class="fuel-tag-diesel">Diesel</span>':'<span class="fuel-tag-magna">Magna</span>';
+  var canDelete=isAdmin()||e.username===session.username;
+  var delBtn=canDelete?'<button class="btn btn-sm btn-danger" onclick="deleteEntry('+e.id+',\''+e.username+'\')">&#10005;</button>':'';
+  return '<div class="history-item"><div class="info" style="flex:1"><div class="top"><span class="vendor-badge">'+nombreDe(e.username)+'</span>'+ftag+(e.nota?e.nota+' &mdash; ':'')+e.distancia_km.toFixed(1)+' km</div><div class="bottom">'+fd(e.fecha)+' &bull; '+e.litros.toFixed(2)+'L &bull; '+fm(e.precio_litro)+'/L &bull; '+e.rendimiento+' km/L</div></div><div class="cost">'+fm(e.costo)+'</div>'+delBtn+'</div>';
+}
+
+function toggleGroup(el){
   el.classList.toggle('collapsed');
   var entries=el.nextElementSibling;
   entries.style.display=entries.style.display==='none'?'':'none';
 }
 
+// ==================== RENDER: POR VENDEDOR (admin) ====================
 function renderVendors(){
-  var h=gh();
+  if(!isAdmin())return;
+  var h=trips.slice();
   var mf=document.getElementById('filterMonthVendor').value;
   var ff=document.getElementById('filterFuelVendor').value;
-  if(mf)h=h.filter(function(e){return fMonthKey(e.date)===mf;});
-  if(ff)h=h.filter(function(e){return e.fuel===ff;});
+  if(mf)h=h.filter(function(e){return fMonthKey(e.fecha)===mf;});
+  if(ff)h=h.filter(function(e){return e.tipo_combustible===ff;});
   var list=document.getElementById('vendorList');
   if(h.length===0){list.innerHTML='<li class="empty-state">No hay datos para este filtro.</li>';return;}
   var vendors={};
   h.forEach(function(e){
-    if(!vendors[e.vendor])vendors[e.vendor]={trips:0,km:0,cost:0,magna:0,diesel:0};
-    vendors[e.vendor].trips++;
-    vendors[e.vendor].km+=e.distance;
-    vendors[e.vendor].cost+=e.cost;
-    if(e.fuel==='diesel')vendors[e.vendor].diesel++;
-    else vendors[e.vendor].magna++;
+    if(!vendors[e.username])vendors[e.username]={trips:0,km:0,cost:0,magna:0,diesel:0};
+    vendors[e.username].trips++;
+    vendors[e.username].km+=e.distancia_km;
+    vendors[e.username].cost+=e.costo;
+    if(e.tipo_combustible==='diesel')vendors[e.username].diesel++;
+    else vendors[e.username].magna++;
   });
   var sorted=Object.keys(vendors).sort(function(a,b){return vendors[b].cost-vendors[a].cost;});
   list.innerHTML=sorted.map(function(v,i){
@@ -421,11 +682,18 @@ function renderVendors(){
     var fuelInfo='';
     if(d.magna>0)fuelInfo+='<span class="fuel-tag-magna">Magna x'+d.magna+'</span> ';
     if(d.diesel>0)fuelInfo+='<span class="fuel-tag-diesel">Diesel x'+d.diesel+'</span>';
-    return '<li class="vendor-stat-item"><div><div class="vname">'+medal+v+'</div><div class="vstats" style="margin-top:4px">'+d.trips+' viaje(s) &bull; '+d.km.toFixed(1)+' km &bull; '+fuelInfo+'</div></div><div class="vtotal">'+fm(d.cost)+'</div></li>';
+    return '<li class="vendor-stat-item"><div><div class="vname">'+medal+nombreDe(v)+'</div><div class="vstats" style="margin-top:4px">'+d.trips+' viaje(s) &bull; '+d.km.toFixed(1)+' km &bull; '+fuelInfo+'</div></div><div class="vtotal">'+fm(d.cost)+'</div></li>';
   }).join('');
 }
 
-updateFuelLabels();updateFilters();renderStats();
+// ==================== INIT ====================
+(async function init(){
+  var stored=localStorage.getItem(SESSION_KEY);
+  await loadUserList();
+  if(stored){
+    try{session=JSON.parse(stored);await startApp();return;}catch(e){}
+  }
+})();
 </script>
 </body>
 </html>
