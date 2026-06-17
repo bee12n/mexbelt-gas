@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Gasolina</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);min-height:100vh;padding:20px;color:#fff}
+    .container{max-width:800px;margin:0 auto}
+    header{text-align:center;padding:30px 0 20px}
+    header h1{font-size:2rem;background:linear-gradient(90deg,#00d2ff,#3a7bd5);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    header p{color:#a0c4e8;margin-top:6px;font-size:.95rem}
+    .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:24px;margin-bottom:20px}
+    .card h2{font-size:1.1rem;color:#00d2ff;margin-bottom:16px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:500px){.grid2{grid-template-columns:1fr}}
+    label{display:block;font-size:.85rem;color:#a0c4e8;margin-bottom:6px}
+    input{width:100%;padding:12px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(0,210,255,.3);border-radius:10px;color:#fff;font-size:1rem;outline:none;transition:border-color .2s}
+    input:focus{border-color:#00d2ff}
+    input::placeholder{color:#6a8ea8}
+    .btn{width:100%;padding:14px;background:linear-gradient(90deg,#00d2ff,#3a7bd5);border:none;border-radius:12px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;margin-top:16px;transition:opacity .2s,transform .1s}
+    .btn:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-danger{background:linear-gradient(90deg,#f44336,#c62828);padding:6px 12px;font-size:.8rem;width:auto;border-radius:8px;margin-top:0}
+    .btn-clear{background:linear-gradient(90deg,#f44336,#c62828);margin-top:12px}
+    .result-box{display:none;background:linear-gradient(135deg,rgba(0,210,255,.15),rgba(58,123,213,.15));border:1px solid rgba(0,210,255,.4);border-radius:12px;padding:20px;margin-top:16px;text-align:center}
+    .result-box .price{font-size:2.5rem;font-weight:700;color:#00d2ff}
+    .result-details{display:flex;justify-content:center;gap:24px;margin-top:12px;flex-wrap:wrap}
+    .detail-item{text-align:center}
+    .detail-item .val{font-size:1.1rem;font-weight:600;color:#fff}
+    .detail-item .lbl{font-size:.75rem;color:#a0c4e8}
+    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    @media(max-width:500px){.stats-grid{grid-template-columns:1fr}}
+    .stat-card{background:rgba(0,210,255,.08);border:1px solid rgba(0,210,255,.2);border-radius:12px;padding:16px;text-align:center}
+    .stat-card .val{font-size:1.4rem;font-weight:700;color:#00d2ff}
+    .stat-card .lbl{font-size:.75rem;color:#a0c4e8;margin-top:4px}
+    .history-list{list-style:none}
+    .history-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;margin-bottom:10px;gap:12px;flex-wrap:wrap}
+    .history-item .info{flex:1;min-width:0}
+    .history-item .info .top{font-weight:600;font-size:1rem;color:#00d2ff}
+    .history-item .info .bottom{font-size:.78rem;color:#a0c4e8;margin-top:3px}
+    .history-item .cost{font-size:1.1rem;font-weight:700;color:#fff;white-space:nowrap}
+    .empty-state{text-align:center;padding:30px;color:#6a8ea8;font-size:.9rem}
+    .mt10{margin-top:10px}
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Calculadora de Gasolina</h1>
+    <p>Calcula el costo de tus viajes y lleva un historial completo</p>
+  </header>
+  <div class="card">
+    <h2>Configuracion</h2>
+    <div class="grid2">
+      <div>
+        <label>Precio de Gasolina (MXN/litro)</label>
+        <input type="number" id="gasPrice" value="24.50" step="0.01" min="0">
+      </div>
+      <div>
+        <label>Rendimiento del Vehiculo (km/litro)</label>
+        <input type="number" id="kmPerLiter" value="15" step="0.1" min="0.1">
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Calcular Viaje</h2>
+    <div>
+      <label>Distancia (km)</label>
+      <input type="number" id="distance" placeholder="Distancia en kilometros" min="0" step="0.1">
+    </div>
+    <div class="mt10">
+      <label>Nota del viaje (opcional)</label>
+      <input type="text" id="note" placeholder="Ej: Viaje a la oficina" maxlength="60">
+    </div>
+    <button class="btn" onclick="calculate()">Calcular y Agregar al Historial</button>
+    <div class="result-box" id="resultBox">
+      <div class="price" id="resultPrice"></div>
+      <div style="color:#a0c4e8;margin-top:4px;font-size:.9rem">Costo estimado del viaje</div>
+      <div class="result-details">
+        <div class="detail-item"><div class="val" id="resLiters"></div><div class="lbl">Litros usados</div></div>
+        <div class="detail-item"><div class="val" id="resKm"></div><div class="lbl">Kilometros</div></div>
+        <div class="detail-item"><div class="val" id="resPrice"></div><div class="lbl">Precio/litro</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Estadisticas Totales</h2>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="val" id="statTrips">0</div><div class="lbl">Viajes registrados</div></div>
+      <div class="stat-card"><div class="val" id="statKm">0 km</div><div class="lbl">Distancia total</div></div>
+      <div class="stat-card"><div class="val" id="statSpent">$0.00</div><div class="lbl">Gasto total (MXN)</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Historial de Viajes</h2>
+    <ul class="history-list" id="historyList">
+      <li class="empty-state">No hay viajes registrados aun.</li>
+    </ul>
+    <button class="btn btn-clear" onclick="clearHistory()">Borrar Todo el Historial</button>
+  </div>
+</div>
+<script>
+var K='gasHistory';
+function gh(){try{return JSON.parse(localStorage.getItem(K))||[];}catch(e){return[];}}
+function sh(h){localStorage.setItem(K,JSON.stringify(h));}
+function fm(v){return'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function fd(iso){var d=new Date(iso);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function calculate(){
+  var dist=parseFloat(document.getElementById('distance').value);
+  var price=parseFloat(document.getElementById('gasPrice').value);
+  var kmpl=parseFloat(document.getElementById('kmPerLiter').value);
+  var note=document.getElementById('note').value.trim();
+  if(!dist||dist<=0){alert('Por favor ingresa una distancia valida.');return;}
+  if(!price||price<=0){alert('Por favor ingresa un precio de gasolina valido.');return;}
+  if(!kmpl||kmpl<=0){alert('Por favor ingresa un rendimiento valido.');return;}
+  var liters=dist/kmpl;
+  var cost=liters*price;
+  document.getElementById('resultBox').style.display='block';
+  document.getElementById('resultPrice').textContent=fm(cost)+' MXN';
+  document.getElementById('resLiters').textContent=liters.toFixed(2)+' L';
+  document.getElementById('resKm').textContent=dist.toFixed(1)+' km';
+  document.getElementById('resPrice').textContent=fm(price);
+  var history=gh();
+  history.unshift({id:Date.now(),date:new Date().toISOString(),distance:dist,gasPrice:price,kmPerLiter:kmpl,liters:liters,cost:cost,note:note||null});
+  sh(history);rh();rs();
+  document.getElementById('distance').value='';
+  document.getElementById('note').value='';
+}
+function deleteEntry(id){var h=gh().filter(function(e){return e.id!==id;});sh(h);rh();rs();}
+function clearHistory(){if(confirm('Estas seguro de que quieres borrar todo el historial?')){sh([]);rh();rs();document.getElementById('resultBox').style.display='none';}}
+function rh(){
+  var history=gh();
+  var list=document.getElementById('historyList');
+  if(history.length===0){list.innerHTML='<li class="empty-state">No hay viajes registrados aun.</li>';return;}
+  list.innerHTML=history.map(function(e){return '<li class="history-item"><div class="info"><div class="top">'+(e.note?e.note+' - ':'')+e.distance.toFixed(1)+' km</div><div class="bottom">'+fd(e.date)+' | '+e.liters.toFixed(2)+'L | '+fm(e.gasPrice)+'/L | '+e.kmPerLiter+' km/L</div></div><div class="cost">'+fm(e.cost)+'</div><button class="btn btn-danger" onclick="deleteEntry('+e.id+')">X</button></li>';}).join('');
+}
+function rs(){
+  var history=gh();
+  document.getElementById('statTrips').textContent=history.length;
+  var tk=history.reduce(function(a,e){return a+e.distance;},0);
+  var ts=history.reduce(function(a,e){return a+e.cost;},0);
+  document.getElementById('statKm').textContent=tk.toFixed(1)+' km';
+  document.getElementById('statSpent').textContent=fm(ts);
+}
+rh();rs();
+</script>
+</body>
+</html>
