@@ -5,85 +5,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Gasolina</title>
   <style>
+    :root{
+      --bg1:#0a0a0f;--bg2:#0f1420;--bg3:#141a2e;
+      --orange:#ff6b1a;--orange2:#ff8c42;--orange-dim:rgba(255,107,26,.18);--orange-border:rgba(255,107,26,.35);
+      --blue:#1e6fff;--blue2:#4a8fff;--blue-dim:rgba(30,111,255,.15);--blue-border:rgba(30,111,255,.35);
+      --card:rgba(255,255,255,.04);--border:rgba(255,255,255,.1);
+      --text:#e8eaf0;--muted:#7a8aa0;
+    }
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);min-height:100vh;padding:20px;color:#fff}
-    .container{max-width:900px;margin:0 auto}
-    header{text-align:center;padding:30px 0 20px}
-    header h1{font-size:2rem;background:linear-gradient(90deg,#00d2ff,#3a7bd5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    header p{color:#a0c4e8;margin-top:6px;font-size:.95rem}
-    .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:24px;margin-bottom:20px}
-    .card h2{font-size:1.1rem;color:#00d2ff;margin-bottom:16px}
+    body{font-family:'Segoe UI',sans-serif;background:var(--bg1);background-image:radial-gradient(ellipse at 20% 50%,rgba(30,111,255,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(255,107,26,.07) 0%,transparent 50%);min-height:100vh;padding:20px;color:var(--text)}
+    .container{max-width:920px;margin:0 auto}
+    header{text-align:center;padding:36px 0 24px;position:relative}
+    header::after{content:'';display:block;width:80px;height:3px;background:linear-gradient(90deg,var(--orange),var(--blue));margin:14px auto 0;border-radius:2px}
+    header h1{font-size:2.1rem;font-weight:800;letter-spacing:-0.5px}
+    header h1 .ico{color:var(--orange)}
+    header h1 .gas{color:#fff}
+    header h1 .line{background:linear-gradient(90deg,var(--orange2),var(--blue2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    header p{color:var(--muted);margin-top:8px;font-size:.9rem}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:18px;transition:border-color .2s}
+    .card:hover{border-color:rgba(255,255,255,.16)}
+    .card-title{font-size:1rem;font-weight:700;color:var(--orange2);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+    .card-title .dot{width:8px;height:8px;background:var(--orange);border-radius:50%;flex-shrink:0}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-    @media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr}}
-    label{display:block;font-size:.85rem;color:#a0c4e8;margin-bottom:6px}
-    input,select{width:100%;padding:12px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(0,210,255,.3);border-radius:10px;color:#fff;font-size:1rem;outline:none;transition:border-color .2s}
-    input:focus,select:focus{border-color:#00d2ff}
-    input::placeholder{color:#6a8ea8}
-    select option{background:#203a43;color:#fff}
-    .btn{width:100%;padding:14px;background:linear-gradient(90deg,#00d2ff,#3a7bd5);border:none;border-radius:12px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;margin-top:16px;transition:opacity .2s,transform .1s}
-    .btn:hover{opacity:.9;transform:translateY(-1px)}
-    .btn-sm{padding:6px 14px;font-size:.8rem;width:auto;border-radius:8px;margin-top:0}
-    .btn-danger{background:linear-gradient(90deg,#f44336,#c62828)}
-    .btn-clear{background:linear-gradient(90deg,#f44336,#c62828);margin-top:12px}
-    .btn-outline{background:transparent;border:1px solid rgba(0,210,255,.5);color:#00d2ff;padding:8px 16px;font-size:.85rem;width:auto;border-radius:8px;margin-top:0;cursor:pointer;transition:background .2s}
-    .btn-outline:hover{background:rgba(0,210,255,.1)}
-    .result-box{display:none;background:linear-gradient(135deg,rgba(0,210,255,.15),rgba(58,123,213,.15));border:1px solid rgba(0,210,255,.4);border-radius:12px;padding:20px;margin-top:16px;text-align:center}
-    .result-box .price{font-size:2.5rem;font-weight:700;color:#00d2ff}
-    .result-details{display:flex;justify-content:center;gap:24px;margin-top:12px;flex-wrap:wrap}
-    .detail-item{text-align:center}
-    .detail-item .val{font-size:1.1rem;font-weight:600;color:#fff}
-    .detail-item .lbl{font-size:.75rem;color:#a0c4e8}
-    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    @media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
-    .stat-card{background:rgba(0,210,255,.08);border:1px solid rgba(0,210,255,.2);border-radius:12px;padding:16px;text-align:center}
-    .stat-card .val{font-size:1.3rem;font-weight:700;color:#00d2ff}
-    .stat-card .lbl{font-size:.72rem;color:#a0c4e8;margin-top:4px}
-    .filters{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end}
-    .filters>div{flex:1;min-width:140px}
-    .filters label{font-size:.8rem}
-    .month-header{background:rgba(0,210,255,.12);border:1px solid rgba(0,210,255,.25);border-radius:10px;padding:10px 16px;margin-bottom:8px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
-    .month-header:first-child{margin-top:0}
-    .month-header .mh-title{font-weight:700;color:#00d2ff;font-size:1rem}
-    .month-header .mh-stats{font-size:.78rem;color:#a0c4e8;display:flex;gap:16px}
-    .month-header .mh-arrow{color:#00d2ff;font-size:.9rem;transition:transform .2s}
-    .month-header.collapsed .mh-arrow{transform:rotate(-90deg)}
-    .month-entries{margin-bottom:4px}
-    .history-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:8px;gap:12px;flex-wrap:wrap}
-    .history-item .info{flex:1;min-width:0}
-    .history-item .info .top{font-weight:600;font-size:.95rem;color:#00d2ff}
-    .history-item .info .bottom{font-size:.75rem;color:#a0c4e8;margin-top:3px}
-    .history-item .cost{font-size:1rem;font-weight:700;color:#fff;white-space:nowrap}
-    .vendor-badge{display:inline-block;background:rgba(58,123,213,.35);border:1px solid rgba(58,123,213,.5);color:#a0cfff;border-radius:20px;padding:2px 10px;font-size:.72rem;margin-right:6px;vertical-align:middle}
-    .empty-state{text-align:center;padding:30px;color:#6a8ea8;font-size:.9rem}
-    .mt10{margin-top:10px}
-    .vendor-stats-list{list-style:none}
-    .vendor-stat-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:8px}
-    .vendor-stat-item .vname{font-weight:600;color:#fff}
-    .vendor-stat-item .vstats{font-size:.78rem;color:#a0c4e8}
-    .vendor-stat-item .vtotal{font-size:1rem;font-weight:700;color:#00d2ff}
-    .tab-bar{display:flex;gap:8px;margin-bottom:20px}
-    .tab-btn{padding:10px 20px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#a0c4e8;cursor:pointer;font-size:.9rem;font-weight:500;transition:all .2s}
-    .tab-btn.active{background:rgba(0,210,255,.15);border-color:rgba(0,210,255,.4);color:#00d2ff}
+    .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    @media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}}
+    label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:6px;font-weight:500;letter-spacing:.3px;text-transform:uppercase}
+    input,select{width:100%;padding:11px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:var(--text);font-size:.95rem;outline:none;transition:border-color .2s,background .2s}
+    input:focus,select:focus{border-color:var(--orange);background:rgba(255,107,26,.06)}
+    input::placeholder{color:rgba(255,255,255,.25)}
+    input[readonly]{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07);color:var(--muted);cursor:not-allowed}
+    select option{background:#0f1420;color:#fff}
+    .fuel-selector{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
+    .fuel-btn{padding:12px;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s;user-select:none}
+    .fuel-btn:hover{border-color:var(--orange-border);background:var(--orange-dim)}
+    .fuel-btn.active-magna{border-color:var(--orange);background:var(--orange-dim);box-shadow:0 0 16px rgba(255,107,26,.2)}
+    .fuel-btn.active-diesel{border-color:var(--blue);background:var(--blue-dim);box-shadow:0 0 16px rgba(30,111,255,.2)}
+    .fuel-btn .fb-icon{font-size:1.6rem;margin-bottom:4px}
+    .fuel-btn .fb-name{font-size:.95rem;font-weight:700;color:#fff}
+    .fuel-btn .fb-price{font-size:.78rem;color:var(--muted);margin-top:2px}
+    .fuel-btn.active-magna .fb-name{color:var(--orange2)}
+    .fuel-btn.active-magna .fb-price{color:var(--orange)}
+    .fuel-btn.active-diesel .fb-name{color:var(--blue2)}
+    .fuel-btn.active-diesel .fb-price{color:var(--blue2)}
+    .btn{width:100%;padding:14px;background:linear-gradient(90deg,var(--orange),#e85e00);border:none;border-radius:12px;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;margin-top:16px;transition:opacity .2s,transform .1s,box-shadow .2s;letter-spacing:.3px;box-shadow:0 4px 20px rgba(255,107,26,.3)}
+    .btn:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 6px 28px rgba(255,107,26,.4)}
+    .btn:active{transform:translateY(0)}
+    .btn-blue{background:linear-gradient(90deg,var(--blue),#1250cc);box-shadow:0 4px 20px rgba(30,111,255,.3)}
+    .btn-blue:hover{box-shadow:0 6px 28px rgba(30,111,255,.4)}
+    .btn-sm{padding:5px 12px;font-size:.78rem;width:auto;border-radius:8px;margin-top:0;box-shadow:none}
+    .btn-danger{background:linear-gradient(90deg,#e53935,#b71c1c);box-shadow:none}
+    .btn-clear{background:linear-gradient(90deg,#e53935,#b71c1c);box-shadow:none;margin-top:12px}
+    .result-box{display:none;background:linear-gradient(135deg,rgba(255,107,26,.1),rgba(30,111,255,.1));border:1px solid rgba(255,107,26,.3);border-radius:14px;padding:22px;margin-top:18px;text-align:center}
+    .result-price{font-size:2.6rem;font-weight:800;background:linear-gradient(90deg,var(--orange2),var(--blue2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .result-details{display:flex;justify-content:center;gap:24px;margin-top:14px;flex-wrap:wrap}
+    .detail-item .val{font-size:1.05rem;font-weight:700;color:#fff}
+    .detail-item .lbl{font-size:.72rem;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.4px}
+    .stat-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;transition:border-color .2s}
+    .stat-card:hover{border-color:var(--orange-border)}
+    .stat-card .val{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,var(--orange2),var(--blue2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .stat-card .lbl{font-size:.72rem;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.4px}
+    .tab-bar{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+    .tab-btn{padding:9px 20px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:var(--muted);cursor:pointer;font-size:.88rem;font-weight:600;transition:all .2s;letter-spacing:.2px}
+    .tab-btn:hover{border-color:var(--orange-border);color:var(--orange2)}
+    .tab-btn.active{background:var(--orange-dim);border-color:var(--orange);color:var(--orange2)}
     .tab-content{display:none}
     .tab-content.active{display:block}
+    .filters{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end}
+    .filters>div{flex:1;min-width:130px}
+    .month-header{background:rgba(255,107,26,.06);border:1px solid var(--orange-border);border-radius:10px;padding:11px 16px;margin-bottom:8px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;transition:background .2s}
+    .month-header:first-child{margin-top:0}
+    .month-header:hover{background:rgba(255,107,26,.1)}
+    .month-header .mh-title{font-weight:700;color:var(--orange2);font-size:.95rem}
+    .month-header .mh-stats{font-size:.75rem;color:var(--muted);display:flex;gap:14px}
+    .month-header .mh-arrow{color:var(--orange);font-size:.85rem;transition:transform .2s}
+    .month-header.collapsed .mh-arrow{transform:rotate(-90deg)}
+    .history-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:10px;margin-bottom:7px;gap:12px;flex-wrap:wrap;transition:border-color .2s}
+    .history-item:hover{border-color:rgba(255,255,255,.2)}
+    .history-item .info .top{font-weight:600;font-size:.9rem;color:#fff}
+    .history-item .info .bottom{font-size:.73rem;color:var(--muted);margin-top:3px}
+    .history-item .cost{font-size:1rem;font-weight:800;color:var(--orange2);white-space:nowrap}
+    .vendor-badge{display:inline-block;background:rgba(30,111,255,.2);border:1px solid rgba(30,111,255,.4);color:var(--blue2);border-radius:20px;padding:2px 9px;font-size:.7rem;margin-right:6px;vertical-align:middle;font-weight:600}
+    .fuel-tag-magna{display:inline-block;background:rgba(255,107,26,.18);border:1px solid rgba(255,107,26,.35);color:var(--orange2);border-radius:20px;padding:1px 8px;font-size:.68rem;margin-right:4px;vertical-align:middle;font-weight:700}
+    .fuel-tag-diesel{display:inline-block;background:rgba(30,111,255,.18);border:1px solid rgba(30,111,255,.35);color:var(--blue2);border-radius:20px;padding:1px 8px;font-size:.68rem;margin-right:4px;vertical-align:middle;font-weight:700}
+    .empty-state{text-align:center;padding:32px;color:var(--muted);font-size:.88rem}
+    .vendor-stat-item{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:border-color .2s}
+    .vendor-stat-item:hover{border-color:var(--orange-border)}
+    .vendor-stat-item .vname{font-weight:700;color:#fff;font-size:.95rem}
+    .vendor-stat-item .vstats{font-size:.75rem;color:var(--muted);margin-top:2px}
+    .vendor-stat-item .vtotal{font-size:1rem;font-weight:800;color:var(--orange2)}
+    .price-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;margin-bottom:8px}
+    .price-row .plabel{font-size:.82rem;font-weight:700;flex:1;min-width:80px}
+    .price-row .plabel.magna{color:var(--orange2)}
+    .price-row .plabel.diesel{color:var(--blue2)}
+    .price-row input{max-width:140px;flex:1}
+    .price-row .phint{font-size:.73rem;color:var(--muted);flex:2}
+    .divider{height:1px;background:var(--border);margin:16px 0}
   </style>
 </head>
 <body>
 <div class="container">
   <header>
-    <h1>Calculadora de Gasolina</h1>
-    <p>Calcula el costo de tus viajes y lleva un historial completo por vendedor y mes</p>
+    <h1><span class="ico">&#9981;</span> <span class="gas">Calcula</span><span class="line">dora</span> <span class="gas">de Gasolina</span></h1>
+    <p>Historial completo por vendedor, mes y tipo de combustible</p>
   </header>
 
-  <!-- Config -->
+  <!-- Config Precios -->
   <div class="card">
-    <h2>Configuracion</h2>
+    <div class="card-title"><span class="dot"></span>Configuracion de Precios</div>
+    <div class="price-row">
+      <span class="plabel magna">&#128308; Magna</span>
+      <input type="number" id="priceMagna" value="25.00" step="0.01" min="0">
+      <span class="phint">Precio por litro en MXN &mdash; edita cuando cambie en la gasolinera</span>
+    </div>
+    <div class="price-row">
+      <span class="plabel diesel">&#128309; Diesel</span>
+      <input type="number" id="priceDiesel" value="26.00" step="0.01" min="0">
+      <span class="phint">Precio por litro en MXN &mdash; edita cuando cambie en la gasolinera</span>
+    </div>
+    <div class="divider"></div>
     <div class="grid2">
-      <div>
-        <label>Precio de Gasolina (MXN/litro)</label>
-        <input type="number" id="gasPrice" value="24.50" step="0.01" min="0">
-      </div>
       <div>
         <label>Rendimiento del Vehiculo (km/litro)</label>
         <input type="number" id="kmPerLiter" value="15" step="0.1" min="0.1">
@@ -91,9 +132,24 @@
     </div>
   </div>
 
-  <!-- Calcular -->
+  <!-- Registrar Viaje -->
   <div class="card">
-    <h2>Registrar Viaje</h2>
+    <div class="card-title"><span class="dot"></span>Registrar Viaje</div>
+    <div style="margin-bottom:16px">
+      <label>Tipo de Combustible</label>
+      <div class="fuel-selector">
+        <div class="fuel-btn active-magna" id="btnMagna" onclick="selectFuel('magna')">
+          <div class="fb-icon">&#128308;</div>
+          <div class="fb-name">Magna</div>
+          <div class="fb-price" id="magnaPriceLabel">$25.00 / L</div>
+        </div>
+        <div class="fuel-btn" id="btnDiesel" onclick="selectFuel('diesel')">
+          <div class="fb-icon">&#128309;</div>
+          <div class="fb-name">Diesel</div>
+          <div class="fb-price" id="dieselPriceLabel">$26.00 / L</div>
+        </div>
+      </div>
+    </div>
     <div class="grid3">
       <div>
         <label>Vendedor / Usuario</label>
@@ -104,126 +160,161 @@
         <input type="number" id="distance" placeholder="Km recorridos" min="0" step="0.1">
       </div>
       <div>
-        <label>Nota del viaje (opcional)</label>
+        <label>Nota (opcional)</label>
         <input type="text" id="note" placeholder="Ej: Visita cliente" maxlength="60">
       </div>
     </div>
-    <button class="btn" onclick="calculate()">Calcular y Agregar al Historial</button>
+    <button class="btn" onclick="calculate()">&#9650; Calcular y Agregar al Historial</button>
     <div class="result-box" id="resultBox">
-      <div class="price" id="resultPrice"></div>
-      <div style="color:#a0c4e8;margin-top:4px;font-size:.9rem">Costo estimado del viaje</div>
+      <div class="result-price" id="resultPrice"></div>
+      <div style="color:var(--muted);margin-top:4px;font-size:.85rem">Costo estimado del viaje</div>
       <div class="result-details">
         <div class="detail-item"><div class="val" id="resVendor"></div><div class="lbl">Vendedor</div></div>
-        <div class="detail-item"><div class="val" id="resLiters"></div><div class="lbl">Litros usados</div></div>
+        <div class="detail-item"><div class="val" id="resFuel"></div><div class="lbl">Combustible</div></div>
+        <div class="detail-item"><div class="val" id="resLiters"></div><div class="lbl">Litros</div></div>
         <div class="detail-item"><div class="val" id="resKm"></div><div class="lbl">Kilometros</div></div>
-        <div class="detail-item"><div class="val" id="resPrice"></div><div class="lbl">Precio/litro</div></div>
+        <div class="detail-item"><div class="val" id="resPrice"></div><div class="lbl">Precio/L</div></div>
       </div>
     </div>
   </div>
 
   <!-- Tabs -->
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="showTab('tab-stats')">Estadisticas</button>
-    <button class="tab-btn" onclick="showTab('tab-history')">Historial por Mes</button>
-    <button class="tab-btn" onclick="showTab('tab-vendors')">Por Vendedor</button>
+    <button class="tab-btn active" onclick="showTab('tab-stats',this)">&#128202; Estadisticas</button>
+    <button class="tab-btn" onclick="showTab('tab-history',this)">&#128197; Historial por Mes</button>
+    <button class="tab-btn" onclick="showTab('tab-vendors',this)">&#128100; Por Vendedor</button>
   </div>
 
-  <!-- Tab: Estadisticas -->
+  <!-- Tab Estadisticas -->
   <div id="tab-stats" class="tab-content active">
     <div class="card">
-      <h2>Estadisticas Generales</h2>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="val" id="statTrips">0</div><div class="lbl">Viajes registrados</div></div>
-        <div class="stat-card"><div class="val" id="statKm">0 km</div><div class="lbl">Distancia total</div></div>
-        <div class="stat-card"><div class="val" id="statSpent">$0.00</div><div class="lbl">Gasto total (MXN)</div></div>
-        <div class="stat-card"><div class="val" id="statVendors">0</div><div class="lbl">Vendedores activos</div></div>
+      <div class="card-title"><span class="dot"></span>Estadisticas Generales</div>
+      <div class="grid4">
+        <div class="stat-card"><div class="val" id="statTrips">0</div><div class="lbl">Viajes</div></div>
+        <div class="stat-card"><div class="val" id="statKm">0 km</div><div class="lbl">Distancia Total</div></div>
+        <div class="stat-card"><div class="val" id="statSpent">$0.00</div><div class="lbl">Gasto Total MXN</div></div>
+        <div class="stat-card"><div class="val" id="statVendors">0</div><div class="lbl">Vendedores</div></div>
       </div>
     </div>
   </div>
 
-  <!-- Tab: Historial por mes -->
+  <!-- Tab Historial -->
   <div id="tab-history" class="tab-content">
     <div class="card">
-      <h2>Historial por Mes</h2>
+      <div class="card-title"><span class="dot"></span>Historial por Mes</div>
       <div class="filters">
         <div>
-          <label>Filtrar por mes</label>
+          <label>Mes</label>
           <select id="filterMonth" onchange="renderHistory()">
-            <option value="">Todos los meses</option>
+            <option value="">Todos</option>
           </select>
         </div>
         <div>
-          <label>Filtrar por vendedor</label>
+          <label>Vendedor</label>
           <select id="filterVendor" onchange="renderHistory()">
-            <option value="">Todos los vendedores</option>
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div>
+          <label>Combustible</label>
+          <select id="filterFuel" onchange="renderHistory()">
+            <option value="">Todos</option>
+            <option value="magna">Magna</option>
+            <option value="diesel">Diesel</option>
           </select>
         </div>
         <div style="display:flex;align-items:flex-end">
-          <button class="btn btn-clear" onclick="clearHistory()" style="margin-top:0;padding:12px 16px;font-size:.85rem">Borrar Todo</button>
+          <button class="btn btn-clear" onclick="clearHistory()" style="margin-top:0;padding:11px 14px;font-size:.82rem">&#128465; Borrar Todo</button>
         </div>
       </div>
       <div id="historyContainer"><div class="empty-state">No hay viajes registrados aun.</div></div>
     </div>
   </div>
 
-  <!-- Tab: Por vendedor -->
+  <!-- Tab Vendedores -->
   <div id="tab-vendors" class="tab-content">
     <div class="card">
-      <h2>Resumen por Vendedor</h2>
+      <div class="card-title"><span class="dot"></span>Resumen por Vendedor</div>
       <div class="filters">
         <div>
-          <label>Filtrar por mes</label>
+          <label>Mes</label>
           <select id="filterMonthVendor" onchange="renderVendors()">
-            <option value="">Todos los meses</option>
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div>
+          <label>Combustible</label>
+          <select id="filterFuelVendor" onchange="renderVendors()">
+            <option value="">Todos</option>
+            <option value="magna">Magna</option>
+            <option value="diesel">Diesel</option>
           </select>
         </div>
       </div>
-      <ul class="vendor-stats-list" id="vendorList"><li class="empty-state">No hay datos aun.</li></ul>
+      <ul id="vendorList" style="list-style:none"><li class="empty-state">No hay datos aun.</li></ul>
     </div>
   </div>
 
 </div>
-
 <script>
 var K='gasHistory';
+var selectedFuel='magna';
+
 function gh(){try{return JSON.parse(localStorage.getItem(K))||[];}catch(e){return[];}}
 function sh(h){localStorage.setItem(K,JSON.stringify(h));}
 function fm(v){return'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 function fd(iso){var d=new Date(iso);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
-function fMonth(iso){var d=new Date(iso);return d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});}
 function fMonthKey(iso){var d=new Date(iso);return d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'));}
+function fMonthLabel(k){var d=new Date(k+'-01');var l=d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});return l.charAt(0).toUpperCase()+l.slice(1);}
 
-function showTab(id){
+function selectFuel(f){
+  selectedFuel=f;
+  document.getElementById('btnMagna').className='fuel-btn'+(f==='magna'?' active-magna':'');
+  document.getElementById('btnDiesel').className='fuel-btn'+(f==='diesel'?' active-diesel':'');
+  updateFuelLabels();
+}
+
+function updateFuelLabels(){
+  var pm=parseFloat(document.getElementById('priceMagna').value)||25;
+  var pd=parseFloat(document.getElementById('priceDiesel').value)||26;
+  document.getElementById('magnaPriceLabel').textContent=fm(pm)+' / L';
+  document.getElementById('dieselPriceLabel').textContent=fm(pd)+' / L';
+}
+
+document.getElementById('priceMagna').addEventListener('input',updateFuelLabels);
+document.getElementById('priceDiesel').addEventListener('input',updateFuelLabels);
+
+function showTab(id,btn){
   document.querySelectorAll('.tab-content').forEach(function(el){el.classList.remove('active');});
   document.querySelectorAll('.tab-btn').forEach(function(el){el.classList.remove('active');});
   document.getElementById(id).classList.add('active');
-  event.target.classList.add('active');
+  btn.classList.add('active');
   if(id==='tab-history')renderHistory();
   if(id==='tab-vendors')renderVendors();
 }
 
 function calculate(){
-  var dist=parseFloat(document.getElementById('distance').value);
-  var price=parseFloat(document.getElementById('gasPrice').value);
+  var price=parseFloat(selectedFuel==='magna'?document.getElementById('priceMagna').value:document.getElementById('priceDiesel').value);
   var kmpl=parseFloat(document.getElementById('kmPerLiter').value);
   var vendor=document.getElementById('vendor').value.trim();
+  var dist=parseFloat(document.getElementById('distance').value);
   var note=document.getElementById('note').value.trim();
   if(!vendor){alert('Por favor ingresa el nombre del vendedor.');return;}
   if(!dist||dist<=0){alert('Por favor ingresa una distancia valida.');return;}
-  if(!price||price<=0){alert('Por favor ingresa un precio de gasolina valido.');return;}
+  if(!price||price<=0){alert('Por favor ingresa un precio valido en la configuracion.');return;}
   if(!kmpl||kmpl<=0){alert('Por favor ingresa un rendimiento valido.');return;}
   var liters=dist/kmpl;
   var cost=liters*price;
   document.getElementById('resultBox').style.display='block';
   document.getElementById('resultPrice').textContent=fm(cost)+' MXN';
   document.getElementById('resVendor').textContent=vendor;
+  document.getElementById('resFuel').textContent=selectedFuel==='magna'?'Magna':'Diesel';
   document.getElementById('resLiters').textContent=liters.toFixed(2)+' L';
   document.getElementById('resKm').textContent=dist.toFixed(1)+' km';
   document.getElementById('resPrice').textContent=fm(price);
   var history=gh();
-  history.unshift({id:Date.now(),date:new Date().toISOString(),vendor:vendor,distance:dist,gasPrice:price,kmPerLiter:kmpl,liters:liters,cost:cost,note:note||null});
-  sh(history);
-  updateFilters();renderStats();
+  history.unshift({id:Date.now(),date:new Date().toISOString(),vendor:vendor,fuel:selectedFuel,distance:dist,gasPrice:price,kmPerLiter:kmpl,liters:liters,cost:cost,note:note||null});
+  sh(history);updateFilters();renderStats();
   document.getElementById('distance').value='';
   document.getElementById('note').value='';
 }
@@ -235,104 +326,69 @@ function deleteEntry(id){
 }
 
 function clearHistory(){
-  if(confirm('Estas seguro de que quieres borrar TODO el historial? Esta accion no se puede deshacer.')){
+  if(confirm('Borrar TODO el historial? Esta accion no se puede deshacer.')){
     sh([]);updateFilters();renderHistory();renderStats();renderVendors();
     document.getElementById('resultBox').style.display='none';
   }
 }
 
-function getMonthKeys(){
-  var h=gh();
-  var keys=[];
-  h.forEach(function(e){var k=fMonthKey(e.date);if(keys.indexOf(k)<0)keys.push(k);});
-  return keys.sort().reverse();
-}
-
-function getVendors(){
-  var h=gh();
-  var vs=[];
-  h.forEach(function(e){if(vs.indexOf(e.vendor)<0)vs.push(e.vendor);});
-  return vs.sort();
-}
-
 function updateFilters(){
-  var months=getMonthKeys();
-  var vendors=getVendors();
-  var mSelH=document.getElementById('filterMonth');
-  var mSelV=document.getElementById('filterMonthVendor');
-  var vSel=document.getElementById('filterVendor');
-  var curMH=mSelH.value,curMV=mSelV.value,curV=vSel.value;
-
-  mSelH.innerHTML='<option value="">Todos los meses</option>';
-  mSelV.innerHTML='<option value="">Todos los meses</option>';
-  vSel.innerHTML='<option value="">Todos los vendedores</option>';
-
-  months.forEach(function(k){
-    var d=new Date(k+'-01');
-    var label=d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
-    label=label.charAt(0).toUpperCase()+label.slice(1);
-    mSelH.innerHTML+='<option value="'+k+'"'+(k===curMH?' selected':'')+'>'+label+'</option>';
-    mSelV.innerHTML+='<option value="'+k+'"'+(k===curMV?' selected':'')+'>'+label+'</option>';
+  var h=gh();
+  var months=[],vendors=[];
+  h.forEach(function(e){
+    var k=fMonthKey(e.date);
+    if(months.indexOf(k)<0)months.push(k);
+    if(vendors.indexOf(e.vendor)<0)vendors.push(e.vendor);
   });
-  vendors.forEach(function(v){
-    vSel.innerHTML+='<option value="'+v+'"'+(v===curV?' selected':'')+'>'+v+'</option>';
+  months.sort().reverse();vendors.sort();
+  var ids=['filterMonth','filterMonthVendor'];
+  ids.forEach(function(id){
+    var sel=document.getElementById(id),cur=sel.value;
+    sel.innerHTML='<option value="">Todos</option>';
+    months.forEach(function(k){sel.innerHTML+='<option value="'+k+'"'+(k===cur?' selected':'')+'>'+fMonthLabel(k)+'</option>';});
   });
+  var vs=document.getElementById('filterVendor'),cv=vs.value;
+  vs.innerHTML='<option value="">Todos</option>';
+  vendors.forEach(function(v){vs.innerHTML+='<option value="'+v+'"'+(v===cv?' selected':'')+'>'+v+'</option>';});
 }
 
 function renderStats(){
-  var history=gh();
-  document.getElementById('statTrips').textContent=history.length;
-  var tk=history.reduce(function(a,e){return a+e.distance;},0);
-  var ts=history.reduce(function(a,e){return a+e.cost;},0);
-  var vs=[];history.forEach(function(e){if(vs.indexOf(e.vendor)<0)vs.push(e.vendor);});
+  var h=gh();
+  document.getElementById('statTrips').textContent=h.length;
+  var tk=h.reduce(function(a,e){return a+e.distance;},0);
+  var ts=h.reduce(function(a,e){return a+e.cost;},0);
+  var vs=[];h.forEach(function(e){if(vs.indexOf(e.vendor)<0)vs.push(e.vendor);});
   document.getElementById('statKm').textContent=tk.toFixed(1)+' km';
   document.getElementById('statSpent').textContent=fm(ts);
   document.getElementById('statVendors').textContent=vs.length;
 }
 
 function renderHistory(){
-  var history=gh();
+  var h=gh();
   var mf=document.getElementById('filterMonth').value;
   var vf=document.getElementById('filterVendor').value;
-  if(mf)history=history.filter(function(e){return fMonthKey(e.date)===mf;});
-  if(vf)history=history.filter(function(e){return e.vendor===vf;});
-  var container=document.getElementById('historyContainer');
-  if(history.length===0){container.innerHTML='<div class="empty-state">No hay viajes para este filtro.</div>';return;}
-
-  // Group by month
-  var groups={};
-  var order=[];
-  history.forEach(function(e){
-    var k=fMonthKey(e.date);
-    if(!groups[k]){groups[k]=[];order.push(k);}
-    groups[k].push(e);
-  });
-
+  var ff=document.getElementById('filterFuel').value;
+  if(mf)h=h.filter(function(e){return fMonthKey(e.date)===mf;});
+  if(vf)h=h.filter(function(e){return e.vendor===vf;});
+  if(ff)h=h.filter(function(e){return e.fuel===ff;});
+  var c=document.getElementById('historyContainer');
+  if(h.length===0){c.innerHTML='<div class="empty-state">No hay viajes para este filtro.</div>';return;}
+  var groups={},order=[];
+  h.forEach(function(e){var k=fMonthKey(e.date);if(!groups[k]){groups[k]=[];order.push(k);}groups[k].push(e);});
   var html='';
   order.forEach(function(k){
     var entries=groups[k];
     var totalKm=entries.reduce(function(a,e){return a+e.distance;},0);
     var totalCost=entries.reduce(function(a,e){return a+e.cost;},0);
-    var d=new Date(k+'-01');
-    var mLabel=d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
-    mLabel=mLabel.charAt(0).toUpperCase()+mLabel.slice(1);
-    html+='<div class="month-header" onclick="toggleMonth(this)">';
-    html+='<div><span class="mh-title">'+mLabel+'</span></div>';
-    html+='<div class="mh-stats"><span>'+entries.length+' viaje(s)</span><span>'+totalKm.toFixed(1)+' km</span><span>'+fm(totalCost)+'</span></div>';
-    html+='<span class="mh-arrow">&#9660;</span>';
-    html+='</div>';
+    html+='<div class="month-header" onclick="toggleMonth(this)"><div><span class="mh-title">'+fMonthLabel(k)+'</span></div><div class="mh-stats"><span>'+entries.length+' viaje(s)</span><span>'+totalKm.toFixed(1)+' km</span><span style="color:var(--orange2);font-weight:700">'+fm(totalCost)+'</span></div><span class="mh-arrow">&#9660;</span></div>';
     html+='<div class="month-entries">';
     entries.forEach(function(e){
-      html+='<div class="history-item">';
-      html+='<div class="info"><div class="top"><span class="vendor-badge">'+e.vendor+'</span>'+(e.note?e.note+' &mdash; ':'')+e.distance.toFixed(1)+' km</div>';
-      html+='<div class="bottom">'+fd(e.date)+' &bull; '+e.liters.toFixed(2)+'L &bull; '+fm(e.gasPrice)+'/L &bull; '+e.kmPerLiter+' km/L</div></div>';
-      html+='<div class="cost">'+fm(e.cost)+'</div>';
-      html+='<button class="btn btn-sm btn-danger" onclick="deleteEntry('+e.id+')">X</button>';
-      html+='</div>';
+      var ftag=e.fuel==='diesel'?'<span class="fuel-tag-diesel">Diesel</span>':'<span class="fuel-tag-magna">Magna</span>';
+      html+='<div class="history-item"><div class="info flex:1"><div class="top"><span class="vendor-badge">'+e.vendor+'</span>'+ftag+(e.note?e.note+' &mdash; ':'')+e.distance.toFixed(1)+' km</div><div class="bottom">'+fd(e.date)+' &bull; '+e.liters.toFixed(2)+'L &bull; '+fm(e.gasPrice)+'/L &bull; '+e.kmPerLiter+' km/L</div></div><div class="cost">'+fm(e.cost)+'</div><button class="btn btn-sm btn-danger" onclick="deleteEntry('+e.id+')">&#10005;</button></div>';
     });
     html+='</div>';
   });
-  container.innerHTML=html;
+  c.innerHTML=html;
 }
 
 function toggleMonth(el){
@@ -342,28 +398,34 @@ function toggleMonth(el){
 }
 
 function renderVendors(){
-  var history=gh();
+  var h=gh();
   var mf=document.getElementById('filterMonthVendor').value;
-  if(mf)history=history.filter(function(e){return fMonthKey(e.date)===mf;});
+  var ff=document.getElementById('filterFuelVendor').value;
+  if(mf)h=h.filter(function(e){return fMonthKey(e.date)===mf;});
+  if(ff)h=h.filter(function(e){return e.fuel===ff;});
   var list=document.getElementById('vendorList');
-  if(history.length===0){list.innerHTML='<li class="empty-state">No hay datos para este filtro.</li>';return;}
-
+  if(h.length===0){list.innerHTML='<li class="empty-state">No hay datos para este filtro.</li>';return;}
   var vendors={};
-  history.forEach(function(e){
-    if(!vendors[e.vendor])vendors[e.vendor]={trips:0,km:0,cost:0};
+  h.forEach(function(e){
+    if(!vendors[e.vendor])vendors[e.vendor]={trips:0,km:0,cost:0,magna:0,diesel:0};
     vendors[e.vendor].trips++;
     vendors[e.vendor].km+=e.distance;
     vendors[e.vendor].cost+=e.cost;
+    if(e.fuel==='diesel')vendors[e.vendor].diesel++;
+    else vendors[e.vendor].magna++;
   });
-
   var sorted=Object.keys(vendors).sort(function(a,b){return vendors[b].cost-vendors[a].cost;});
-  list.innerHTML=sorted.map(function(v){
-    return '<li class="vendor-stat-item"><div><div class="vname">'+v+'</div><div class="vstats">'+vendors[v].trips+' viaje(s) &bull; '+vendors[v].km.toFixed(1)+' km</div></div><div class="vtotal">'+fm(vendors[v].cost)+'</div></li>';
+  list.innerHTML=sorted.map(function(v,i){
+    var d=vendors[v];
+    var medal=i===0?'&#129351; ':i===1?'&#129352; ':i===2?'&#129353; ':'';
+    var fuelInfo='';
+    if(d.magna>0)fuelInfo+='<span class="fuel-tag-magna">Magna x'+d.magna+'</span> ';
+    if(d.diesel>0)fuelInfo+='<span class="fuel-tag-diesel">Diesel x'+d.diesel+'</span>';
+    return '<li class="vendor-stat-item"><div><div class="vname">'+medal+v+'</div><div class="vstats" style="margin-top:4px">'+d.trips+' viaje(s) &bull; '+d.km.toFixed(1)+' km &bull; '+fuelInfo+'</div></div><div class="vtotal">'+fm(d.cost)+'</div></li>';
   }).join('');
 }
 
-// Init
-updateFilters();renderStats();
+updateFuelLabels();updateFilters();renderStats();
 </script>
 </body>
 </html>
