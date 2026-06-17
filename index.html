@@ -7,49 +7,76 @@
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);min-height:100vh;padding:20px;color:#fff}
-    .container{max-width:800px;margin:0 auto}
+    .container{max-width:900px;margin:0 auto}
     header{text-align:center;padding:30px 0 20px}
-    header h1{font-size:2rem;background:linear-gradient(90deg,#00d2ff,#3a7bd5);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    header h1{font-size:2rem;background:linear-gradient(90deg,#00d2ff,#3a7bd5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
     header p{color:#a0c4e8;margin-top:6px;font-size:.95rem}
     .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:24px;margin-bottom:20px}
     .card h2{font-size:1.1rem;color:#00d2ff;margin-bottom:16px}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    @media(max-width:500px){.grid2{grid-template-columns:1fr}}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+    @media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr}}
     label{display:block;font-size:.85rem;color:#a0c4e8;margin-bottom:6px}
-    input{width:100%;padding:12px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(0,210,255,.3);border-radius:10px;color:#fff;font-size:1rem;outline:none;transition:border-color .2s}
-    input:focus{border-color:#00d2ff}
+    input,select{width:100%;padding:12px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(0,210,255,.3);border-radius:10px;color:#fff;font-size:1rem;outline:none;transition:border-color .2s}
+    input:focus,select:focus{border-color:#00d2ff}
     input::placeholder{color:#6a8ea8}
+    select option{background:#203a43;color:#fff}
     .btn{width:100%;padding:14px;background:linear-gradient(90deg,#00d2ff,#3a7bd5);border:none;border-radius:12px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;margin-top:16px;transition:opacity .2s,transform .1s}
     .btn:hover{opacity:.9;transform:translateY(-1px)}
-    .btn-danger{background:linear-gradient(90deg,#f44336,#c62828);padding:6px 12px;font-size:.8rem;width:auto;border-radius:8px;margin-top:0}
+    .btn-sm{padding:6px 14px;font-size:.8rem;width:auto;border-radius:8px;margin-top:0}
+    .btn-danger{background:linear-gradient(90deg,#f44336,#c62828)}
     .btn-clear{background:linear-gradient(90deg,#f44336,#c62828);margin-top:12px}
+    .btn-outline{background:transparent;border:1px solid rgba(0,210,255,.5);color:#00d2ff;padding:8px 16px;font-size:.85rem;width:auto;border-radius:8px;margin-top:0;cursor:pointer;transition:background .2s}
+    .btn-outline:hover{background:rgba(0,210,255,.1)}
     .result-box{display:none;background:linear-gradient(135deg,rgba(0,210,255,.15),rgba(58,123,213,.15));border:1px solid rgba(0,210,255,.4);border-radius:12px;padding:20px;margin-top:16px;text-align:center}
     .result-box .price{font-size:2.5rem;font-weight:700;color:#00d2ff}
     .result-details{display:flex;justify-content:center;gap:24px;margin-top:12px;flex-wrap:wrap}
     .detail-item{text-align:center}
     .detail-item .val{font-size:1.1rem;font-weight:600;color:#fff}
     .detail-item .lbl{font-size:.75rem;color:#a0c4e8}
-    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    @media(max-width:500px){.stats-grid{grid-template-columns:1fr}}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    @media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
     .stat-card{background:rgba(0,210,255,.08);border:1px solid rgba(0,210,255,.2);border-radius:12px;padding:16px;text-align:center}
-    .stat-card .val{font-size:1.4rem;font-weight:700;color:#00d2ff}
-    .stat-card .lbl{font-size:.75rem;color:#a0c4e8;margin-top:4px}
-    .history-list{list-style:none}
-    .history-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;margin-bottom:10px;gap:12px;flex-wrap:wrap}
+    .stat-card .val{font-size:1.3rem;font-weight:700;color:#00d2ff}
+    .stat-card .lbl{font-size:.72rem;color:#a0c4e8;margin-top:4px}
+    .filters{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end}
+    .filters>div{flex:1;min-width:140px}
+    .filters label{font-size:.8rem}
+    .month-header{background:rgba(0,210,255,.12);border:1px solid rgba(0,210,255,.25);border-radius:10px;padding:10px 16px;margin-bottom:8px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+    .month-header:first-child{margin-top:0}
+    .month-header .mh-title{font-weight:700;color:#00d2ff;font-size:1rem}
+    .month-header .mh-stats{font-size:.78rem;color:#a0c4e8;display:flex;gap:16px}
+    .month-header .mh-arrow{color:#00d2ff;font-size:.9rem;transition:transform .2s}
+    .month-header.collapsed .mh-arrow{transform:rotate(-90deg)}
+    .month-entries{margin-bottom:4px}
+    .history-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:8px;gap:12px;flex-wrap:wrap}
     .history-item .info{flex:1;min-width:0}
-    .history-item .info .top{font-weight:600;font-size:1rem;color:#00d2ff}
-    .history-item .info .bottom{font-size:.78rem;color:#a0c4e8;margin-top:3px}
-    .history-item .cost{font-size:1.1rem;font-weight:700;color:#fff;white-space:nowrap}
+    .history-item .info .top{font-weight:600;font-size:.95rem;color:#00d2ff}
+    .history-item .info .bottom{font-size:.75rem;color:#a0c4e8;margin-top:3px}
+    .history-item .cost{font-size:1rem;font-weight:700;color:#fff;white-space:nowrap}
+    .vendor-badge{display:inline-block;background:rgba(58,123,213,.35);border:1px solid rgba(58,123,213,.5);color:#a0cfff;border-radius:20px;padding:2px 10px;font-size:.72rem;margin-right:6px;vertical-align:middle}
     .empty-state{text-align:center;padding:30px;color:#6a8ea8;font-size:.9rem}
     .mt10{margin-top:10px}
+    .vendor-stats-list{list-style:none}
+    .vendor-stat-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:8px}
+    .vendor-stat-item .vname{font-weight:600;color:#fff}
+    .vendor-stat-item .vstats{font-size:.78rem;color:#a0c4e8}
+    .vendor-stat-item .vtotal{font-size:1rem;font-weight:700;color:#00d2ff}
+    .tab-bar{display:flex;gap:8px;margin-bottom:20px}
+    .tab-btn{padding:10px 20px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#a0c4e8;cursor:pointer;font-size:.9rem;font-weight:500;transition:all .2s}
+    .tab-btn.active{background:rgba(0,210,255,.15);border-color:rgba(0,210,255,.4);color:#00d2ff}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
   </style>
 </head>
 <body>
 <div class="container">
   <header>
     <h1>Calculadora de Gasolina</h1>
-    <p>Calcula el costo de tus viajes y lleva un historial completo</p>
+    <p>Calcula el costo de tus viajes y lleva un historial completo por vendedor y mes</p>
   </header>
+
+  <!-- Config -->
   <div class="card">
     <h2>Configuracion</h2>
     <div class="grid2">
@@ -63,54 +90,125 @@
       </div>
     </div>
   </div>
+
+  <!-- Calcular -->
   <div class="card">
-    <h2>Calcular Viaje</h2>
-    <div>
-      <label>Distancia (km)</label>
-      <input type="number" id="distance" placeholder="Distancia en kilometros" min="0" step="0.1">
-    </div>
-    <div class="mt10">
-      <label>Nota del viaje (opcional)</label>
-      <input type="text" id="note" placeholder="Ej: Viaje a la oficina" maxlength="60">
+    <h2>Registrar Viaje</h2>
+    <div class="grid3">
+      <div>
+        <label>Vendedor / Usuario</label>
+        <input type="text" id="vendor" placeholder="Nombre del vendedor" maxlength="40">
+      </div>
+      <div>
+        <label>Distancia (km)</label>
+        <input type="number" id="distance" placeholder="Km recorridos" min="0" step="0.1">
+      </div>
+      <div>
+        <label>Nota del viaje (opcional)</label>
+        <input type="text" id="note" placeholder="Ej: Visita cliente" maxlength="60">
+      </div>
     </div>
     <button class="btn" onclick="calculate()">Calcular y Agregar al Historial</button>
     <div class="result-box" id="resultBox">
       <div class="price" id="resultPrice"></div>
       <div style="color:#a0c4e8;margin-top:4px;font-size:.9rem">Costo estimado del viaje</div>
       <div class="result-details">
+        <div class="detail-item"><div class="val" id="resVendor"></div><div class="lbl">Vendedor</div></div>
         <div class="detail-item"><div class="val" id="resLiters"></div><div class="lbl">Litros usados</div></div>
         <div class="detail-item"><div class="val" id="resKm"></div><div class="lbl">Kilometros</div></div>
         <div class="detail-item"><div class="val" id="resPrice"></div><div class="lbl">Precio/litro</div></div>
       </div>
     </div>
   </div>
-  <div class="card">
-    <h2>Estadisticas Totales</h2>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="val" id="statTrips">0</div><div class="lbl">Viajes registrados</div></div>
-      <div class="stat-card"><div class="val" id="statKm">0 km</div><div class="lbl">Distancia total</div></div>
-      <div class="stat-card"><div class="val" id="statSpent">$0.00</div><div class="lbl">Gasto total (MXN)</div></div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('tab-stats')">Estadisticas</button>
+    <button class="tab-btn" onclick="showTab('tab-history')">Historial por Mes</button>
+    <button class="tab-btn" onclick="showTab('tab-vendors')">Por Vendedor</button>
+  </div>
+
+  <!-- Tab: Estadisticas -->
+  <div id="tab-stats" class="tab-content active">
+    <div class="card">
+      <h2>Estadisticas Generales</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="val" id="statTrips">0</div><div class="lbl">Viajes registrados</div></div>
+        <div class="stat-card"><div class="val" id="statKm">0 km</div><div class="lbl">Distancia total</div></div>
+        <div class="stat-card"><div class="val" id="statSpent">$0.00</div><div class="lbl">Gasto total (MXN)</div></div>
+        <div class="stat-card"><div class="val" id="statVendors">0</div><div class="lbl">Vendedores activos</div></div>
+      </div>
     </div>
   </div>
-  <div class="card">
-    <h2>Historial de Viajes</h2>
-    <ul class="history-list" id="historyList">
-      <li class="empty-state">No hay viajes registrados aun.</li>
-    </ul>
-    <button class="btn btn-clear" onclick="clearHistory()">Borrar Todo el Historial</button>
+
+  <!-- Tab: Historial por mes -->
+  <div id="tab-history" class="tab-content">
+    <div class="card">
+      <h2>Historial por Mes</h2>
+      <div class="filters">
+        <div>
+          <label>Filtrar por mes</label>
+          <select id="filterMonth" onchange="renderHistory()">
+            <option value="">Todos los meses</option>
+          </select>
+        </div>
+        <div>
+          <label>Filtrar por vendedor</label>
+          <select id="filterVendor" onchange="renderHistory()">
+            <option value="">Todos los vendedores</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-clear" onclick="clearHistory()" style="margin-top:0;padding:12px 16px;font-size:.85rem">Borrar Todo</button>
+        </div>
+      </div>
+      <div id="historyContainer"><div class="empty-state">No hay viajes registrados aun.</div></div>
+    </div>
   </div>
+
+  <!-- Tab: Por vendedor -->
+  <div id="tab-vendors" class="tab-content">
+    <div class="card">
+      <h2>Resumen por Vendedor</h2>
+      <div class="filters">
+        <div>
+          <label>Filtrar por mes</label>
+          <select id="filterMonthVendor" onchange="renderVendors()">
+            <option value="">Todos los meses</option>
+          </select>
+        </div>
+      </div>
+      <ul class="vendor-stats-list" id="vendorList"><li class="empty-state">No hay datos aun.</li></ul>
+    </div>
+  </div>
+
 </div>
+
 <script>
 var K='gasHistory';
 function gh(){try{return JSON.parse(localStorage.getItem(K))||[];}catch(e){return[];}}
 function sh(h){localStorage.setItem(K,JSON.stringify(h));}
 function fm(v){return'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 function fd(iso){var d=new Date(iso);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function fMonth(iso){var d=new Date(iso);return d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});}
+function fMonthKey(iso){var d=new Date(iso);return d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'));}
+
+function showTab(id){
+  document.querySelectorAll('.tab-content').forEach(function(el){el.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(el){el.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='tab-history')renderHistory();
+  if(id==='tab-vendors')renderVendors();
+}
+
 function calculate(){
   var dist=parseFloat(document.getElementById('distance').value);
   var price=parseFloat(document.getElementById('gasPrice').value);
   var kmpl=parseFloat(document.getElementById('kmPerLiter').value);
+  var vendor=document.getElementById('vendor').value.trim();
   var note=document.getElementById('note').value.trim();
+  if(!vendor){alert('Por favor ingresa el nombre del vendedor.');return;}
   if(!dist||dist<=0){alert('Por favor ingresa una distancia valida.');return;}
   if(!price||price<=0){alert('Por favor ingresa un precio de gasolina valido.');return;}
   if(!kmpl||kmpl<=0){alert('Por favor ingresa un rendimiento valido.');return;}
@@ -118,32 +216,154 @@ function calculate(){
   var cost=liters*price;
   document.getElementById('resultBox').style.display='block';
   document.getElementById('resultPrice').textContent=fm(cost)+' MXN';
+  document.getElementById('resVendor').textContent=vendor;
   document.getElementById('resLiters').textContent=liters.toFixed(2)+' L';
   document.getElementById('resKm').textContent=dist.toFixed(1)+' km';
   document.getElementById('resPrice').textContent=fm(price);
   var history=gh();
-  history.unshift({id:Date.now(),date:new Date().toISOString(),distance:dist,gasPrice:price,kmPerLiter:kmpl,liters:liters,cost:cost,note:note||null});
-  sh(history);rh();rs();
+  history.unshift({id:Date.now(),date:new Date().toISOString(),vendor:vendor,distance:dist,gasPrice:price,kmPerLiter:kmpl,liters:liters,cost:cost,note:note||null});
+  sh(history);
+  updateFilters();renderStats();
   document.getElementById('distance').value='';
   document.getElementById('note').value='';
 }
-function deleteEntry(id){var h=gh().filter(function(e){return e.id!==id;});sh(h);rh();rs();}
-function clearHistory(){if(confirm('Estas seguro de que quieres borrar todo el historial?')){sh([]);rh();rs();document.getElementById('resultBox').style.display='none';}}
-function rh(){
-  var history=gh();
-  var list=document.getElementById('historyList');
-  if(history.length===0){list.innerHTML='<li class="empty-state">No hay viajes registrados aun.</li>';return;}
-  list.innerHTML=history.map(function(e){return '<li class="history-item"><div class="info"><div class="top">'+(e.note?e.note+' - ':'')+e.distance.toFixed(1)+' km</div><div class="bottom">'+fd(e.date)+' | '+e.liters.toFixed(2)+'L | '+fm(e.gasPrice)+'/L | '+e.kmPerLiter+' km/L</div></div><div class="cost">'+fm(e.cost)+'</div><button class="btn btn-danger" onclick="deleteEntry('+e.id+')">X</button></li>';}).join('');
+
+function deleteEntry(id){
+  if(!confirm('Eliminar este registro?'))return;
+  var h=gh().filter(function(e){return e.id!==id;});
+  sh(h);updateFilters();renderHistory();renderStats();renderVendors();
 }
-function rs(){
+
+function clearHistory(){
+  if(confirm('Estas seguro de que quieres borrar TODO el historial? Esta accion no se puede deshacer.')){
+    sh([]);updateFilters();renderHistory();renderStats();renderVendors();
+    document.getElementById('resultBox').style.display='none';
+  }
+}
+
+function getMonthKeys(){
+  var h=gh();
+  var keys=[];
+  h.forEach(function(e){var k=fMonthKey(e.date);if(keys.indexOf(k)<0)keys.push(k);});
+  return keys.sort().reverse();
+}
+
+function getVendors(){
+  var h=gh();
+  var vs=[];
+  h.forEach(function(e){if(vs.indexOf(e.vendor)<0)vs.push(e.vendor);});
+  return vs.sort();
+}
+
+function updateFilters(){
+  var months=getMonthKeys();
+  var vendors=getVendors();
+  var mSelH=document.getElementById('filterMonth');
+  var mSelV=document.getElementById('filterMonthVendor');
+  var vSel=document.getElementById('filterVendor');
+  var curMH=mSelH.value,curMV=mSelV.value,curV=vSel.value;
+
+  mSelH.innerHTML='<option value="">Todos los meses</option>';
+  mSelV.innerHTML='<option value="">Todos los meses</option>';
+  vSel.innerHTML='<option value="">Todos los vendedores</option>';
+
+  months.forEach(function(k){
+    var d=new Date(k+'-01');
+    var label=d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
+    label=label.charAt(0).toUpperCase()+label.slice(1);
+    mSelH.innerHTML+='<option value="'+k+'"'+(k===curMH?' selected':'')+'>'+label+'</option>';
+    mSelV.innerHTML+='<option value="'+k+'"'+(k===curMV?' selected':'')+'>'+label+'</option>';
+  });
+  vendors.forEach(function(v){
+    vSel.innerHTML+='<option value="'+v+'"'+(v===curV?' selected':'')+'>'+v+'</option>';
+  });
+}
+
+function renderStats(){
   var history=gh();
   document.getElementById('statTrips').textContent=history.length;
   var tk=history.reduce(function(a,e){return a+e.distance;},0);
   var ts=history.reduce(function(a,e){return a+e.cost;},0);
+  var vs=[];history.forEach(function(e){if(vs.indexOf(e.vendor)<0)vs.push(e.vendor);});
   document.getElementById('statKm').textContent=tk.toFixed(1)+' km';
   document.getElementById('statSpent').textContent=fm(ts);
+  document.getElementById('statVendors').textContent=vs.length;
 }
-rh();rs();
+
+function renderHistory(){
+  var history=gh();
+  var mf=document.getElementById('filterMonth').value;
+  var vf=document.getElementById('filterVendor').value;
+  if(mf)history=history.filter(function(e){return fMonthKey(e.date)===mf;});
+  if(vf)history=history.filter(function(e){return e.vendor===vf;});
+  var container=document.getElementById('historyContainer');
+  if(history.length===0){container.innerHTML='<div class="empty-state">No hay viajes para este filtro.</div>';return;}
+
+  // Group by month
+  var groups={};
+  var order=[];
+  history.forEach(function(e){
+    var k=fMonthKey(e.date);
+    if(!groups[k]){groups[k]=[];order.push(k);}
+    groups[k].push(e);
+  });
+
+  var html='';
+  order.forEach(function(k){
+    var entries=groups[k];
+    var totalKm=entries.reduce(function(a,e){return a+e.distance;},0);
+    var totalCost=entries.reduce(function(a,e){return a+e.cost;},0);
+    var d=new Date(k+'-01');
+    var mLabel=d.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
+    mLabel=mLabel.charAt(0).toUpperCase()+mLabel.slice(1);
+    html+='<div class="month-header" onclick="toggleMonth(this)">';
+    html+='<div><span class="mh-title">'+mLabel+'</span></div>';
+    html+='<div class="mh-stats"><span>'+entries.length+' viaje(s)</span><span>'+totalKm.toFixed(1)+' km</span><span>'+fm(totalCost)+'</span></div>';
+    html+='<span class="mh-arrow">&#9660;</span>';
+    html+='</div>';
+    html+='<div class="month-entries">';
+    entries.forEach(function(e){
+      html+='<div class="history-item">';
+      html+='<div class="info"><div class="top"><span class="vendor-badge">'+e.vendor+'</span>'+(e.note?e.note+' &mdash; ':'')+e.distance.toFixed(1)+' km</div>';
+      html+='<div class="bottom">'+fd(e.date)+' &bull; '+e.liters.toFixed(2)+'L &bull; '+fm(e.gasPrice)+'/L &bull; '+e.kmPerLiter+' km/L</div></div>';
+      html+='<div class="cost">'+fm(e.cost)+'</div>';
+      html+='<button class="btn btn-sm btn-danger" onclick="deleteEntry('+e.id+')">X</button>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+
+function toggleMonth(el){
+  el.classList.toggle('collapsed');
+  var entries=el.nextElementSibling;
+  entries.style.display=entries.style.display==='none'?'':'none';
+}
+
+function renderVendors(){
+  var history=gh();
+  var mf=document.getElementById('filterMonthVendor').value;
+  if(mf)history=history.filter(function(e){return fMonthKey(e.date)===mf;});
+  var list=document.getElementById('vendorList');
+  if(history.length===0){list.innerHTML='<li class="empty-state">No hay datos para este filtro.</li>';return;}
+
+  var vendors={};
+  history.forEach(function(e){
+    if(!vendors[e.vendor])vendors[e.vendor]={trips:0,km:0,cost:0};
+    vendors[e.vendor].trips++;
+    vendors[e.vendor].km+=e.distance;
+    vendors[e.vendor].cost+=e.cost;
+  });
+
+  var sorted=Object.keys(vendors).sort(function(a,b){return vendors[b].cost-vendors[a].cost;});
+  list.innerHTML=sorted.map(function(v){
+    return '<li class="vendor-stat-item"><div><div class="vname">'+v+'</div><div class="vstats">'+vendors[v].trips+' viaje(s) &bull; '+vendors[v].km.toFixed(1)+' km</div></div><div class="vtotal">'+fm(vendors[v].cost)+'</div></li>';
+  }).join('');
+}
+
+// Init
+updateFilters();renderStats();
 </script>
 </body>
 </html>
