@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Gasolina</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <style>
     :root{
       --bg1:#0a0a0f;--bg2:#0f1420;--bg3:#141a2e;
@@ -38,6 +39,7 @@
     input:focus,select:focus{border-color:var(--orange);background:rgba(255,107,26,.06)}
     input::placeholder{color:rgba(255,255,255,.25)}
     input[readonly],select:disabled{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07);color:var(--muted);cursor:not-allowed;opacity:.8}
+    input[type="date"]{color-scheme:dark}
     select option{background:#0f1420;color:#fff}
     .fuel-selector{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
     .fuel-btn{padding:12px;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s;user-select:none}
@@ -121,6 +123,23 @@
     .logout-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:8px;font-size:.8rem;cursor:pointer;transition:all .2s}
     .logout-btn:hover{border-color:rgba(255,255,255,.3);color:#fff}
     .loading-msg{text-align:center;padding:60px 20px;color:var(--muted)}
+
+    /* ── EXCEL EXPORT PANEL ─────────────────────────── */
+    .excel-panel{background:rgba(31,174,107,.06);border:1px solid rgba(31,174,107,.25);border-radius:14px;padding:20px 22px;margin-bottom:18px}
+    .excel-panel-title{font-size:.95rem;font-weight:700;color:var(--green2);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+    .excel-mode-bar{display:flex;gap:8px;margin-bottom:14px}
+    .excel-mode-btn{padding:7px 16px;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--muted);transition:all .2s;width:auto;margin-top:0;box-shadow:none;letter-spacing:.2px}
+    .excel-mode-btn.active{background:var(--orange-dim);border-color:var(--orange);color:var(--orange2)}
+    .excel-semana-info{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:.8rem;color:var(--muted);margin-bottom:14px}
+    .excel-semana-info strong{color:var(--text)}
+    .excel-rango{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+    .excel-rango .rf{display:flex;flex-direction:column;gap:4px}
+    .excel-rango .rf label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:0}
+    .excel-rango .rf input{width:160px;padding:8px 12px;font-size:.88rem}
+    .btn-excel{background:linear-gradient(90deg,var(--green),#0d8a50);border:none;border-radius:10px;color:#fff;font-size:.9rem;font-weight:700;padding:11px 24px;cursor:pointer;width:auto;margin-top:0;box-shadow:0 4px 18px rgba(31,174,107,.3);transition:opacity .2s,transform .1s;display:inline-flex;align-items:center;gap:8px;letter-spacing:.2px}
+    .btn-excel:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-excel:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .excel-hint{font-size:.72rem;color:var(--muted);margin-top:8px}
   </style>
 </head>
 <body>
@@ -178,6 +197,32 @@
           <input type="number" id="kmPerLiter" step="0.1" min="0.1">
         </div>
       </div>
+    </div>
+
+    <!-- ── PANEL EXPORTAR EXCEL (solo admin) ── -->
+    <div class="excel-panel hidden" id="excelPanel">
+      <div class="excel-panel-title">&#128202; Exportar Excel de Gastos</div>
+
+      <div class="excel-mode-bar">
+        <button class="excel-mode-btn active" id="btnModoSemana" onclick="setExcelModo('semana')">&#128197; Semana actual</button>
+        <button class="excel-mode-btn" id="btnModoRango" onclick="setExcelModo('rango')">&#128198; Rango de fechas</button>
+      </div>
+
+      <div id="excelSemanaInfo" class="excel-semana-info"></div>
+
+      <div id="excelRangoFields" class="excel-rango hidden">
+        <div class="rf">
+          <label>Desde</label>
+          <input type="date" id="excelDesde">
+        </div>
+        <div class="rf">
+          <label>Hasta</label>
+          <input type="date" id="excelHasta">
+        </div>
+      </div>
+
+      <button class="btn-excel" id="btnExcel" onclick="exportarExcel()">&#11015;&#65039; Descargar Excel</button>
+      <div class="excel-hint">El archivo incluye 2 hojas: detalle de cada viaje + resumen por vendedor.</div>
     </div>
 
     <!-- Registrar Viaje -->
@@ -330,11 +375,163 @@ var SUPABASE_KEY='sb_publishable_Sjf6UkMXUZooCgvSizvkwg_i0tKaI7S';
 var sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 var SESSION_KEY='gas_session';
-var session=null;       // {username,nombre,rol}
-var allUsers=[];        // [{username,nombre,rol}]
-var trips=[];           // viajes visibles segun el rol
+var session=null;
+var allUsers=[];
+var trips=[];
 var cfg={precio_magna:25,precio_diesel:26,rendimiento:15};
 var selectedFuel='magna';
+
+// ── EXCEL: estado ──────────────────────────────────────
+var excelModo='semana'; // 'semana' | 'rango'
+
+function getLunesActual(){
+  var d=new Date();
+  var dia=d.getDay();
+  var diff=(dia===0?-6:1-dia);
+  d.setDate(d.getDate()+diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function getDomingoActual(lunes){
+  var d=new Date(lunes);
+  d.setDate(d.getDate()+6);
+  d.setHours(23,59,59,999);
+  return d;
+}
+function toInputDate(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function initExcelPanel(){
+  var lunes=getLunesActual();
+  var domingo=getDomingoActual(lunes);
+  // Info semana
+  var optsCorto={day:'2-digit',month:'long'};
+  var optsLargo={day:'2-digit',month:'long',year:'numeric'};
+  document.getElementById('excelSemanaInfo').innerHTML=
+    'Semana del <strong>'+lunes.toLocaleDateString('es-MX',optsCorto)+'</strong> al <strong>'+domingo.toLocaleDateString('es-MX',optsLargo)+'</strong>';
+  // Defaults de inputs
+  document.getElementById('excelDesde').value=toInputDate(lunes);
+  document.getElementById('excelHasta').value=toInputDate(domingo);
+}
+
+function setExcelModo(modo){
+  excelModo=modo;
+  document.getElementById('btnModoSemana').classList.toggle('active',modo==='semana');
+  document.getElementById('btnModoRango').classList.toggle('active',modo==='rango');
+  document.getElementById('excelSemanaInfo').classList.toggle('hidden',modo!=='semana');
+  document.getElementById('excelRangoFields').classList.toggle('hidden',modo!=='rango');
+}
+
+async function exportarExcel(){
+  var btn=document.getElementById('btnExcel');
+  btn.disabled=true;
+  btn.innerHTML='&#9203; Generando...';
+  try{
+    var desde,hasta;
+    if(excelModo==='semana'){
+      desde=getLunesActual();
+      hasta=getDomingoActual(desde);
+    }else{
+      var dv=document.getElementById('excelDesde').value;
+      var hv=document.getElementById('excelHasta').value;
+      if(!dv||!hv){alert('Selecciona las fechas de inicio y fin.');return;}
+      desde=new Date(dv+'T00:00:00');
+      hasta=new Date(hv+'T23:59:59');
+      if(desde>hasta){alert('La fecha de inicio debe ser antes que la de fin.');return;}
+    }
+
+    var res=await sb.from('viajes')
+      .select('*')
+      .gte('fecha',desde.toISOString())
+      .lte('fecha',hasta.toISOString())
+      .order('username',{ascending:true})
+      .order('fecha',{ascending:true});
+
+    if(res.error){alert('Error al obtener datos: '+res.error.message);return;}
+    var data=res.data||[];
+    if(data.length===0){alert('No hay viajes en el período seleccionado.');return;}
+
+    // ── Hoja 1: Detalle por viaje ──────────────────────
+    var filas=data.map(function(v){
+      return{
+        'Fecha': new Date(v.fecha).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+        'Vendedor': nombreDe(v.username),
+        'Combustible': v.tipo_combustible==='magna'?'Magna':'Diesel',
+        'Distancia (km)': v.distancia_km,
+        'Precio/Litro ($)': v.precio_litro,
+        'Rendimiento (km/L)': v.rendimiento,
+        'Litros': parseFloat((v.litros||0).toFixed(2)),
+        'Costo ($)': parseFloat((v.costo||0).toFixed(2)),
+        'Nota': v.nota||''
+      };
+    });
+
+    // ── Hoja 2: Resumen por vendedor ───────────────────
+    var porVendedor={};
+    data.forEach(function(v){
+      var nombre=nombreDe(v.username);
+      if(!porVendedor[nombre]) porVendedor[nombre]={viajes:0,km:0,litros:0,costo:0,magna:0,diesel:0};
+      porVendedor[nombre].viajes+=1;
+      porVendedor[nombre].km+=v.distancia_km||0;
+      porVendedor[nombre].litros+=v.litros||0;
+      porVendedor[nombre].costo+=v.costo||0;
+      if(v.tipo_combustible==='diesel') porVendedor[nombre].diesel+=1;
+      else porVendedor[nombre].magna+=1;
+    });
+
+    var resumen=Object.entries(porVendedor)
+      .sort(function(a,b){return b[1].costo-a[1].costo;})
+      .map(function(entry){
+        var n=entry[0],d=entry[1];
+        return{
+          'Vendedor': n,
+          'Viajes': d.viajes,
+          'Km Totales': parseFloat(d.km.toFixed(1)),
+          'Litros Totales': parseFloat(d.litros.toFixed(2)),
+          'Costo Total ($)': parseFloat(d.costo.toFixed(2)),
+          'Viajes Magna': d.magna,
+          'Viajes Diesel': d.diesel
+        };
+      });
+
+    // Fila TOTAL
+    resumen.push({
+      'Vendedor':'TOTAL',
+      'Viajes': Object.values(porVendedor).reduce(function(s,d){return s+d.viajes;},0),
+      'Km Totales': parseFloat(Object.values(porVendedor).reduce(function(s,d){return s+d.km;},0).toFixed(1)),
+      'Litros Totales': parseFloat(Object.values(porVendedor).reduce(function(s,d){return s+d.litros;},0).toFixed(2)),
+      'Costo Total ($)': parseFloat(Object.values(porVendedor).reduce(function(s,d){return s+d.costo;},0).toFixed(2)),
+      'Viajes Magna': Object.values(porVendedor).reduce(function(s,d){return s+d.magna;},0),
+      'Viajes Diesel': Object.values(porVendedor).reduce(function(s,d){return s+d.diesel;},0)
+    });
+
+    // ── Crear workbook ─────────────────────────────────
+    var wb=XLSX.utils.book_new();
+
+    var ws1=XLSX.utils.json_to_sheet(filas);
+    ws1['!cols']=[{wch:20},{wch:18},{wch:12},{wch:15},{wch:15},{wch:17},{wch:10},{wch:14},{wch:28}];
+    XLSX.utils.book_append_sheet(wb,ws1,'Detalle Viajes');
+
+    var ws2=XLSX.utils.json_to_sheet(resumen);
+    ws2['!cols']=[{wch:20},{wch:8},{wch:14},{wch:16},{wch:16},{wch:14},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,ws2,'Resumen por Vendedor');
+
+    // ── Nombre archivo ─────────────────────────────────
+    var fmt=function(d){return String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+d.getFullYear();};
+    var nombre=excelModo==='semana'
+      ?'Gasolina_Semana_'+fmt(desde)+'-'+fmt(hasta)+'.xlsx'
+      :'Gasolina_'+fmt(desde)+'-'+fmt(hasta)+'.xlsx';
+
+    XLSX.writeFile(wb,nombre);
+
+  }catch(e){
+    alert('Error al generar Excel: '+e.message);
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='&#11015;&#65039; Descargar Excel';
+  }
+}
 
 // ==================== HELPERS ====================
 function fm(v){return'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
@@ -401,11 +598,14 @@ async function startApp(){
   roleEl.className='role-chip '+(isAdmin()?'admin':'vendedor');
 
   document.getElementById('priceConfigCard').classList.toggle('hidden',!isAdmin());
+  document.getElementById('excelPanel').classList.toggle('hidden',!isAdmin());
   document.getElementById('tabVendorsBtn').classList.toggle('hidden',!isAdmin());
   document.getElementById('clearAllWrap').classList.toggle('hidden',!isAdmin());
   document.getElementById('filterVendorWrap').classList.toggle('hidden',!isAdmin());
   document.getElementById('filterVendorWeekWrap').classList.toggle('hidden',!isAdmin());
   document.getElementById('statVendorsCard').classList.toggle('hidden',!isAdmin());
+
+  if(isAdmin()) initExcelPanel();
 
   await loadConfig();
   setupVendorSelect();
